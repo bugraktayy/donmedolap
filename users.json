@@ -1,4 +1,30 @@
 {
   "users": [],
-  "history": []
+  "history": [
+    {
+      "id": "strawberry",
+      "icon": "🍓",
+      "multiplier": 20
+    },
+    {
+      "id": "orange",
+      "icon": "🍊",
+      "multiplier": 10
+    },
+    {
+      "id": "meat",
+      "icon": "🍗",
+      "multiplier": 45
+    },
+    {
+      "id": "orange",
+      "icon": "🍊",
+      "multiplier": 10
+    },
+    {
+      "id": "watermelon",
+      "icon": "🍉",
+      "multiplier": 15
+    }
+  ]
 }

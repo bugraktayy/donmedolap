@@ -26,17 +26,19 @@
         /* Dönme Dolap Çark Alanı */
         .wheel-section { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px 0; }
         
-        .Ferris-wrapper { position: relative; width: 380px; height: 380px; display: flex; align-items: center; justify-content: center; }
+        .Ferris-wrapper { position: relative; width: 360px; height: 360px; display: flex; align-items: center; justify-content: center; margin-top: 15px; }
         
-        /* Üstteki Sabit İşaretçi (Ok) */
+        /* Üstteki Sabit İşaretçi (Ok) - Çarkın Üst Kenarına Tam Oturtuldu */
         .wheel-pointer { 
             position: absolute; 
-            top: 2px; 
+            top: -12px; 
+            left: 50%;
+            transform: translateX(-50%);
             width: 0; 
             height: 0; 
-            border-left: 14px solid transparent; 
-            border-right: 14px solid transparent; 
-            border-bottom: 28px solid #ef4444; 
+            border-left: 12px solid transparent; 
+            border-right: 12px solid transparent; 
+            border-top: 24px solid #ef4444; 
             z-index: 50; 
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
         }
@@ -44,8 +46,8 @@
         /* Dönen Çark İskeleti ve Kabinler */
         .wheel-container { 
             position: relative; 
-            width: 340px; 
-            height: 340px; 
+            width: 320px; 
+            height: 320px; 
             border-radius: 50%; 
             border: 10px solid #eab308; 
             background: radial-gradient(circle, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.95) 100%); 
@@ -59,8 +61,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             background: linear-gradient(135deg, #f59e0b, #d97706);
             border: 4px solid #fef08a;
             border-radius: 50%;
@@ -73,13 +75,13 @@
             text-align: center;
         }
         .hub-title { font-size: 11px; font-weight: bold; color: #451a03; text-transform: uppercase; }
-        .timer { font-size: 26px; font-weight: bold; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+        .timer { font-size: 24px; font-weight: bold; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 
         /* Çark Üzerindeki Kabinler (Meyveler) */
         .cabin {
             position: absolute;
-            width: 60px;
-            height: 60px;
+            width: 55px;
+            height: 55px;
             background: #1e293b;
             border: 3px solid #38bdf8;
             border-radius: 12px;
@@ -90,7 +92,7 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.4);
             transform: translate(-50%, -50%);
         }
-        .cabin-icon { font-size: 28px; line-height: 1; }
+        .cabin-icon { font-size: 26px; line-height: 1; }
         .cabin-mult { font-size: 10px; font-weight: bold; color: #38bdf8; margin-top: 2px; }
 
         /* Bahis Paneli */
@@ -429,7 +431,7 @@
         socket.on('spin_wheel', (data) => {
             const wheel = document.getElementById('wheel');
             const degreePerItem = 360 / 7;
-            const targetDegree = 360 * 5 + (data.winnerIndex * degreePerItem) + (degreePerItem / 2);
+            const targetDegree = 360 * 5 + (data.winnerIndex * degreePerItem);
             wheel.style.transform = `rotate(-${targetDegree}deg)`;
         });
 
@@ -471,14 +473,14 @@
                 </div>
             `;
             
-            const radius = 115; // Çark merkezinden uzaklık (çark boyutu büyüdüğü için güncellendi)
+            const radius = 105; // 320px çark genişliği için kusursuz yarıçap mesafesi
             const total = items.length;
 
             items.forEach((item, index) => {
                 const angle = (index * 360) / total - 90; 
                 const rad = (angle * Math.PI) / 180;
-                const x = 170 + radius * Math.cos(rad); // 170 -> 340px genişliğin yarısı
-                const y = 170 + radius * Math.sin(rad); // 170 -> 340px yüksekliğin yarısı
+                const x = 160 + radius * Math.cos(rad); // 160 -> 320px genişliğin yarısı
+                const y = 160 + radius * Math.sin(rad); // 160 -> 320px yüksekliğin yarısı
 
                 html += `
                     <div class="cabin" style="left: ${x}px; top: ${y}px;">
