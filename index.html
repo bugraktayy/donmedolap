@@ -3,63 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Rulet Oyunu</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Çark / Dönme Dolap Oyunu</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #wheel {
+            transition: transform 4s cubic-bezier(0.15, 0.90, 0.15, 1);
+        }
+    </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col justify-between">
 
-    <!-- ÜST MENÜ / NAVBAR -->
+    <!-- ÜST MENÜ -->
     <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-xl font-bold text-yellow-400">Rulet Oyunu</h1>
+        <h1 class="text-xl font-bold text-yellow-400">Dönme Dolap / Çark Oyunu</h1>
         <div id="userMenu" class="hidden flex items-center gap-4">
             <span class="text-sm">Kullanıcı: <strong id="usernameDisplay"></strong></span>
             <span class="text-sm">Bakiye: <strong id="userBalance" class="text-green-400">0</strong> TL</span>
-            <!-- Para Yatırma Butonu -->
-            <button onclick="openDepositModal()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded font-bold text-sm transition">
-                + Para Yatır
-            </button>
-            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
-                Çıkış Yap
-            </button>
+            <button onclick="openDepositModal()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded font-bold text-sm transition">+ Para Yatır</button>
+            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">Çıkış Yap</button>
         </div>
     </header>
 
-    <!-- ANA İÇERİK / GİRİŞ & OYUN ALANI -->
+    <!-- ANA İÇERİK -->
     <main class="flex-grow flex items-center justify-center p-4">
         
-        <!-- 1. GİRİŞ / KAYIT / ŞİFREMİ UNUTTUM KUTUSU -->
+        <!-- GİRİŞ KUTUSU -->
         <div id="authContainer" class="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md">
             <h2 id="authTitle" class="text-2xl font-bold mb-6 text-center text-yellow-400">Giriş Yap</h2>
             
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Kullanıcı Adı</label>
-                    <input type="text" id="authUsername" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-400 text-white" placeholder="Kullanıcı adınızı girin">
+                    <input type="text" id="authUsername" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Kullanıcı adını gir">
                 </div>
-
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">Şifre</label>
-                    <input type="password" id="authPassword" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-400 text-white" placeholder="Şifrenizi girin">
+                    <input type="password" id="authPassword" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Şifreni gir">
                 </div>
 
-                <!-- Kayıt Olurken Çıkacak Ek Alanlar -->
                 <div id="registerFields" class="hidden space-y-4">
                     <div>
                         <label class="block text-sm text-gray-400 mb-1">Güvenlik Sorusu</label>
-                        <input type="text" id="secQuestion" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-400 text-white" placeholder="Örn: İlk evcil hayvanınızın adı?">
+                        <input type="text" id="secQuestion" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Örn: İlk evcil hayvanının adı?">
                     </div>
                     <div>
                         <label class="block text-sm text-gray-400 mb-1">Güvenlik Sorusu Cevabı</label>
-                        <input type="text" id="secAnswer" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-yellow-400 text-white" placeholder="Cevabınız">
+                        <input type="text" id="secAnswer" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white" placeholder="Cevabın">
                     </div>
                 </div>
 
-                <button onclick="handleAuthSubmit()" id="authSubmitBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 rounded transition">
-                    Giriş Yap
-                </button>
+                <button onclick="handleAuthSubmit()" id="authSubmitBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 rounded transition">Giriş Yap</button>
 
-                <!-- Mod Geçiş Linkleri -->
                 <div class="flex justify-between text-sm mt-4">
                     <button onclick="toggleAuthMode('login')" class="text-gray-400 hover:text-white underline">Giriş Yap</button>
                     <button onclick="toggleAuthMode('register')" class="text-gray-400 hover:text-white underline">Kayıt Ol</button>
@@ -68,26 +62,32 @@
             </div>
         </div>
 
-        <!-- 2. OYUN EKRANI (Giriş Yapınca Görünür) -->
-        <div id="gameContainer" class="hidden text-center w-full max-w-2xl bg-gray-800 p-8 rounded-xl shadow-lg">
-            <h2 class="text-3xl font-bold mb-4 text-yellow-400">Rulet Masasına Hoş Geldiniz!</h2>
-            <p class="text-gray-400 mb-6">Bahis miktarınızı seçin ve döndürün!</p>
+        <!-- ÇARK OYUN EKRANI -->
+        <div id="gameContainer" class="hidden text-center w-full max-w-lg bg-gray-800 p-8 rounded-xl shadow-lg flex flex-col items-center">
+            <h2 class="text-2xl font-bold mb-4 text-yellow-400">Çarkı Çevir, Kazan!</h2>
             
-            <!-- Sonuç Gösterge Alanı -->
-            <div id="gameResult" class="text-2xl font-bold mb-6 text-yellow-300">Bir bahis seçin ve çevirin</div>
+            <!-- Bahis Miktarı -->
+            <div class="mb-4">
+                <label class="block text-sm text-gray-400 mb-1">Bahis Miktarı (TL)</label>
+                <input type="number" id="betAmount" value="50" class="w-32 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-center text-white font-bold">
+            </div>
 
-            <!-- Bahis ve Çevirme Kontrolleri -->
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Bahis Miktarı (TL)</label>
-                    <input type="number" id="betAmount" value="100" class="w-32 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-center text-white font-bold mx-auto">
-                </div>
-
-                <div class="flex justify-center gap-4">
-                    <button onclick="playRoulette('red')" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded font-bold text-white transition">Kırmızıya Oyna</button>
-                    <button onclick="playRoulette('black')" class="bg-gray-900 hover:bg-black border border-gray-700 px-6 py-3 rounded font-bold text-white transition">Siyaha Oyna</button>
+            <!-- ÇARK GÖRSELİ (DÖNME DOLAP) -->
+            <div class="relative w-64 h-64 my-6">
+                <!-- Üst İşaretçi (İğne) -->
+                <div class="absolute -top-4 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-yellow-400 z-20"></div>
+                
+                <!-- Dönen Çark -->
+                <div id="wheel" class="w-full h-full rounded-full border-4 border-yellow-500 relative overflow-hidden bg-gradient-to-tr from-purple-800 to-indigo-900 flex items-center justify-center shadow-2xl">
+                    <div class="absolute inset-0 flex items-center justify-center font-bold text-lg text-yellow-300">ÇARK</div>
                 </div>
             </div>
+
+            <button onclick="spinWheel()" id="spinBtn" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-8 py-3 rounded-full shadow-lg transition transform active:scale-95">
+                ÇARKI ÇEVİR
+            </button>
+
+            <div id="gameResult" class="text-lg font-bold mt-4 text-gray-300"></div>
         </div>
 
     </main>
@@ -96,37 +96,30 @@
     <div id="depositModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
         <div class="bg-gray-800 p-6 rounded-xl max-w-sm w-full shadow-xl">
             <h3 class="text-xl font-bold mb-4 text-yellow-400">Hesaba Para Yatır</h3>
-            <p class="text-sm text-gray-400 mb-4">Yüklemek istediğiniz tutarı seçin veya yazın:</p>
-            
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <button onclick="handleDeposit(100)" class="bg-gray-700 hover:bg-gray-600 py-2 rounded font-bold">+100 TL</button>
-                <button onclick="handleDeposit(500)" class="bg-gray-700 hover:bg-gray-600 py-2 rounded font-bold">+500 TL</button>
-                <button onclick="handleDeposit(1000)" class="bg-gray-700 hover:bg-gray-600 py-2 rounded font-bold">+1000 TL</button>
+                <button onclick="handleDeposit(100)" class="bg-gray-700 hover:bg-gray-600 py-2 rounded font-bold">+100</button>
+                <button onclick="handleDeposit(500)" class="bg-gray-700 hover:bg-gray-600 py-2 rounded font-bold">+500</button>
+                <button onclick="handleDeposit(1000)" class="bg-gray-700 hover:bg-gray-600 py-2 rounded font-bold">+1000</button>
             </div>
-
-            <input type="number" id="customDepositAmount" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 mb-4 text-white" placeholder="Özel tutar girin">
-            
+            <input type="number" id="customDepositAmount" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 mb-4 text-white" placeholder="Özel tutar">
             <div class="flex justify-end gap-2">
-                <button onclick="closeDepositModal()" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded text-sm">İptal</button>
-                <button onclick="handleCustomDeposit()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded font-bold text-sm">Yatır</button>
+                <button onclick="closeDepositModal()" class="bg-gray-600 px-4 py-2 rounded text-sm">İptal</button>
+                <button onclick="handleCustomDeposit()" class="bg-green-600 px-4 py-2 rounded font-bold text-sm">Yatır</button>
             </div>
         </div>
     </div>
 
-    <!-- JAVASCRIPT KODLARI -->
+    <!-- SCRIPT -->
     <script>
-        let currentAuthMode = 'login'; // 'login', 'register', 'forgot'
+        let currentAuthMode = 'login';
         let currentUsername = localStorage.getItem('username') || '';
         let balance = 0;
+        let currentRotation = 0;
 
-        // Sayfa yüklendiğinde oturum kontrolü
         window.addEventListener('DOMContentLoaded', () => {
-            if (currentUsername) {
-                checkUserSession();
-            }
+            if (currentUsername) checkUserSession();
         });
 
-        // Mod Değiştirme Fonksiyonu
         function toggleAuthMode(mode) {
             currentAuthMode = mode;
             const authTitle = document.getElementById('authTitle');
@@ -148,14 +141,11 @@
             }
         }
 
-        // Ana İşlem Butonu (Giriş / Kayıt / Şifre Sıfırlama)
         async function handleAuthSubmit() {
             const username = document.getElementById('authUsername').value.trim();
             const password = document.getElementById('authPassword').value.trim();
-
             if (!username) return alert('Kullanıcı adı boş olamaz!');
 
-            // 1. GİRİŞ YAP
             if (currentAuthMode === 'login') {
                 if (!password) return alert('Şifre boş olamaz!');
                 try {
@@ -165,26 +155,15 @@
                         body: JSON.stringify({ username, password })
                     });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'Giriş başarısız');
-
+                    if (!res.ok) throw new Error(data.error);
                     localStorage.setItem('username', data.username);
                     currentUsername = data.username;
-                    alert('Giriş başarılı!');
                     location.reload();
-                } catch (err) {
-                    alert(err.message);
-                }
-            } 
-            // 2. KAYIT OL
-            else if (currentAuthMode === 'register') {
+                } catch (err) { alert(err.message); }
+            } else if (currentAuthMode === 'register') {
                 if (!password) return alert('Şifre boş olamaz!');
                 const securityQuestion = document.getElementById('secQuestion').value.trim();
                 const securityAnswer = document.getElementById('secAnswer').value.trim();
-
-                if (!securityQuestion || !securityAnswer) {
-                    return alert('Lütfen güvenlik sorusu ve cevabını doldurun!');
-                }
-
                 try {
                     const res = await fetch('/api/register', {
                         method: 'POST',
@@ -192,25 +171,18 @@
                         body: JSON.stringify({ username, password, securityQuestion, securityAnswer })
                     });
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'Kayıt başarısız');
-
-                    alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+                    if (!res.ok) throw new Error(data.error);
+                    alert('Kayıt başarılı!');
                     toggleAuthMode('login');
-                } catch (err) {
-                    alert(err.message);
-                }
-            } 
-            // 3. ŞİFREMİ UNUTTUM
-            else if (currentAuthMode === 'forgot') {
+                } catch (err) { alert(err.message); }
+            } else if (currentAuthMode === 'forgot') {
                 try {
                     const res = await fetch(`/api/get-security-question?username=${encodeURIComponent(username)}`);
                     const data = await res.json();
-                    if (!res.ok) throw new Error(data.error || 'Kullanıcı bulunamadı');
-
-                    const answer = prompt(`Güvenlik Sorusu: ${data.question}\nCevabınızı girin:`);
+                    if (!res.ok) throw new Error(data.error);
+                    const answer = prompt(`Soru: ${data.question}\nCevabın:`);
                     if (!answer) return;
-
-                    const newPassword = prompt('Yeni şifrenizi girin:');
+                    const newPassword = prompt('Yeni şifre:');
                     if (!newPassword) return;
 
                     const resetRes = await fetch('/api/reset-password', {
@@ -219,17 +191,13 @@
                         body: JSON.stringify({ username, answer, newPassword })
                     });
                     const resetData = await resetRes.json();
-                    if (!resetRes.ok) throw new Error(resetData.error || 'Şifre sıfırlanamadı');
-
-                    alert('Şifreniz başarıyla değiştirildi! Şimdi giriş yapabilirsiniz.');
+                    if (!resetRes.ok) throw new Error(resetData.error);
+                    alert('Şifre güncellendi!');
                     toggleAuthMode('login');
-                } catch (err) {
-                    alert(err.message);
-                }
+                } catch (err) { alert(err.message); }
             }
         }
 
-        // Oturum Açıksa Arayüzü Düzenle
         async function checkUserSession() {
             try {
                 const res = await fetch(`/api/user?username=${encodeURIComponent(currentUsername)}`);
@@ -238,42 +206,27 @@
                     balance = data.user.balance;
                     document.getElementById('usernameDisplay').innerText = currentUsername;
                     document.getElementById('userBalance').innerText = balance;
-                    
                     document.getElementById('authContainer').classList.add('hidden');
                     document.getElementById('userMenu').classList.remove('hidden');
                     document.getElementById('gameContainer').classList.remove('hidden');
                 }
-            } catch (e) {
-                console.error("Oturum kontrolü hatası:", e);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // Çıkış Yap
         function handleLogout() {
             localStorage.removeItem('username');
             location.reload();
         }
 
-        // Para Yatırma Modal İşlemleri
-        function openDepositModal() {
-            document.getElementById('depositModal').classList.remove('hidden');
-        }
-
-        function closeDepositModal() {
-            document.getElementById('depositModal').classList.add('hidden');
-        }
-
-        async function handleDeposit(amount) {
-            await sendDepositRequest(amount);
-        }
-
+        function openDepositModal() { document.getElementById('depositModal').classList.remove('hidden'); }
+        function closeDepositModal() { document.getElementById('depositModal').classList.add('hidden'); }
+        async function handleDeposit(amount) { await sendDeposit(amount); }
         async function handleCustomDeposit() {
             const amount = Number(document.getElementById('customDepositAmount').value);
-            if (!amount || amount <= 0) return alert('Geçerli bir tutar girin!');
-            await sendDepositRequest(amount);
+            if (!amount || amount <= 0) return alert('Geçerli tutar gir!');
+            await sendDeposit(amount);
         }
-
-        async function sendDepositRequest(amount) {
+        async function sendDeposit(amount) {
             try {
                 const res = await fetch('/api/deposit', {
                     method: 'POST',
@@ -282,41 +235,56 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
                 balance = data.newBalance;
                 document.getElementById('userBalance').innerText = balance;
                 alert(data.message);
                 closeDepositModal();
-            } catch (err) {
-                alert(err.message);
-            }
+            } catch (err) { alert(err.message); }
         }
 
-        // Rulet Oyunu Temel Mantığı
-        function playRoulette(choice) {
+        // Çarkı Çevirme Fonksiyonu
+        async function spinWheel() {
             const betAmount = Number(document.getElementById('betAmount').value);
-            if (!betAmount || betAmount <= 0) return alert('Geçerli bir bahis miktarı girin!');
-            if (betAmount > balance) return alert('Bakiyeniz yetersiz!');
+            if (!betAmount || betAmount <= 0) return alert('Geçerli bahis gir!');
+            if (betAmount > balance) return alert('Bakiyen yetersiz!');
 
-            // Basit simülasyon (Rastgele renk seçimi)
-            const colors = ['red', 'black', 'red', 'black', 'green'];
-            const winningColor = colors[Math.floor(Math.random() * colors.length)];
-            
-            const resultDiv = document.getElementById('gameResult');
-            
-            if (winningColor === choice) {
-                balance += betAmount;
-                resultDiv.innerText = `Tebrikler! Gelen renk: ${winningColor.toUpperCase()}. Kazandınız!`;
-                resultDiv.className = "text-2xl font-bold mb-6 text-green-400";
-            } else {
-                balance -= betAmount;
-                resultDiv.innerText = `Üzgünüm! Gelen renk: ${winningColor.toUpperCase()}. Kaybettiniz!`;
-                resultDiv.className = "text-2xl font-bold mb-6 text-red-400";
-            }
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = true;
 
-            document.getElementById('userBalance').innerText = balance;
+            // Çarpanlar: 0x, 1x, 2x, 0.5x vb.
+            const multipliers = [0, 2, 0.5, 3, 0, 1.5, 0];
+            const randomMultiplier = multipliers[Math.floor(Math.random() * multipliers.length)];
             
-            // Bakiyeyi arka planda sunucuya da güncelletmek istersen buraya ekleme yapabilirsin
+            // Çarkı rastgele döndür (en az 5 tur + rastgele açı)
+            const extraDegrees = Math.floor(Math.random() * 360);
+            currentRotation += 1800 + extraDegrees;
+            
+            const wheel = document.getElementById('wheel');
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+            setTimeout(async () => {
+                let winAmount = betAmount * randomMultiplier;
+                balance = balance - betAmount + winAmount;
+                
+                const resultDiv = document.getElementById('gameResult');
+                if (winAmount > 0) {
+                    resultDiv.innerText = `Tebrikler! ${randomMultiplier}x Çarpan denk geldi. Kazancın: ${winAmount} TL`;
+                    resultDiv.className = "text-lg font-bold mt-4 text-green-400";
+                } else {
+                    resultDiv.innerText = `Maalesef kaybettin!`;
+                    resultDiv.className = "text-lg font-bold mt-4 text-red-400";
+                }
+
+                document.getElementById('userBalance').innerText = balance;
+                spinBtn.disabled = false;
+
+                // Bakiyeyi sunucuya kaydet
+                await fetch('/api/update-balance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUsername, newBalance: balance })
+                });
+            }, 4000);
         }
     </script>
 </body>

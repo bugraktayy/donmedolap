@@ -9,7 +9,6 @@ const DATA_FILE = path.join(__dirname, 'users.json');
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// Veritabanı yönetim fonksiyonları
 let db = { users: [] };
 
 function loadData() {
@@ -32,12 +31,11 @@ function saveData() {
     }
 }
 
-// Başlangıçta verileri yükle
 loadData();
 
 // 1. Oturum Kontrolü ve Kullanıcı Bilgileri
 app.get('/api/user', (req, res) => {
-    loadData(); // Her istekte güncel veriyi oku
+    loadData();
     const { username } = req.query;
     
     if (!username) {
@@ -123,7 +121,7 @@ app.post('/api/reset-password', (req, res) => {
     const { username, answer, newPassword } = req.body;
 
     if (!username || !answer || !newPassword) {
-        return res.status(400).json({ error: 'Tüm alanları doldurmalısınız!' });
+        return res.status(400).json({ error: 'Tüm alanları doldurmalısın!' });
     }
 
     const user = db.users.find(u => u.username === username);
@@ -163,7 +161,7 @@ app.post('/api/deposit', (req, res) => {
     res.json({ success: true, newBalance: user.balance, message: `${amount} TL başarıyla yüklendi!` });
 });
 
-// 7. Oyun Bahis Güncelleme API'si (Rulet Sonucu Bakiye Güncelleme)
+// 7. Çark Oyunu Sonrası Bakiye Güncelleme
 app.post('/api/update-balance', (req, res) => {
     loadData();
     const { username, newBalance } = req.body;
