@@ -7,63 +7,107 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; }
-        header { background: #1e293b; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .logo { font-size: 24px; font-weight: bold; color: #38bdf8; }
-        .user-panel { display: flex; gap: 15px; align-items: center; }
-        .balance-box { background: #0f172a; padding: 8px 15px; border-radius: 8px; border: 1px solid #334155; }
-        .btn { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        body { background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+        
+        header { background: #1e293b; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; flex-wrap: wrap; gap: 10px; }
+        .logo { font-size: 20px; font-weight: bold; color: #38bdf8; }
+        .user-panel { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .balance-box { background: #0f172a; padding: 6px 12px; border-radius: 8px; border: 1px solid #334155; font-size: 14px; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; font-size: 13px; }
         .btn:hover { background: #2563eb; }
         .btn-danger { background: #ef4444; }
-        .btn-danger:hover { background: dc2626; }
+        .btn-danger:hover { background: #dc2626; }
+        
+        /* Ana Konteyner - Mobilde Alt Alta Sıralanır */
         .main-container { display: grid; grid-template-columns: 280px 1fr 300px; gap: 20px; padding: 20px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 15px; }
-        h3 { color: #38bdf8; font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+        .card { background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 12px; }
+        h3 { color: #38bdf8; font-size: 16px; border-bottom: 1px solid #334155; padding-bottom: 6px; }
         
         /* Çark Alanı */
         .wheel-section { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        .timer { font-size: 32px; font-weight: bold; color: #fbbf24; margin-bottom: 10px; }
-        .wheel-container { position: relative; width: 300px; height: 300px; border-radius: 50%; border: 8px solid #38bdf8; display: flex; align-items: center; justify-content: center; background: #0f172a; box-shadow: 0 0 25px rgba(56, 189, 248, 0.3); transition: transform 5s cubic-bezier(0.15, 0.95, 0.15, 1); }
-        .wheel-pointer { position: absolute; top: -20px; width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #ef4444; z-index: 10; }
-        .center-text { font-size: 28px; font-weight: bold; }
+        .timer { font-size: 28px; font-weight: bold; color: #fbbf24; margin-bottom: 5px; }
+        .wheel-container { position: relative; width: 200px; height: 200px; border-radius: 50%; border: 8px solid #38bdf8; display: flex; align-items: center; justify-content: center; background: #0f172a; box-shadow: 0 0 25px rgba(56, 189, 248, 0.3); transition: transform 5s cubic-bezier(0.15, 0.95, 0.15, 1); }
+        .wheel-pointer { position: absolute; top: -18px; width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-bottom: 25px solid #ef4444; z-index: 10; }
+        .center-text { font-size: 70px !important; line-height: 1; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; text-align: center; }
 
         /* Bahis Paneli */
-        .bet-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .bet-item { background: #0f172a; border: 2px solid #334155; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .bet-options { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .bet-item { background: #0f172a; border: 2px solid #334155; border-radius: 8px; padding: 8px 4px; text-align: center; cursor: pointer; transition: 0.2s; }
         .bet-item:hover, .bet-item.selected { border-color: #38bdf8; background: #1e293b; }
-        .chip-amounts { display: flex; gap: 10px; margin-top: 10px; }
-        .chip { flex: 1; padding: 8px; background: #334155; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; }
+        .chip-amounts { display: flex; gap: 8px; margin-top: 5px; }
+        .chip { flex: 1; padding: 8px 4px; background: #334155; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; font-size: 12px; }
         .chip.active { background: #38bdf8; color: #0f172a; }
 
         /* Chat ve Liderlik */
-        .chat-box { flex: 1; height: 200px; background: #0f172a; border-radius: 8px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 14px; border: 1px solid #334155; }
+        .chat-box { flex: 1; height: 160px; background: #0f172a; border-radius: 8px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 13px; border: 1px solid #334155; }
         .chat-input-area { display: flex; gap: 5px; }
-        .chat-input-area input { flex: 1; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; }
-        .leaderboard-list { display: flex; flex-direction: column; gap: 8px; }
-        .leaderboard-item { display: flex; justify-content: space-between; background: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
+        .chat-input-area input { flex: 1; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 13px; }
+        .leaderboard-list { display: flex; flex-direction: column; gap: 6px; }
+        .leaderboard-item { display: flex; justify-content: space-between; background: #0f172a; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
 
-        /* Modal Giriş Ekranı */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal { background: #1e293b; padding: 30px; border-radius: 12px; width: 350px; display: flex; flex-direction: column; gap: 15px; border: 1px solid #334155; }
-        .modal input { padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; }
+        /* Modal Ekranı */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 15px; }
+        .modal { background: #1e293b; padding: 25px; border-radius: 12px; width: 100%; max-width: 350px; display: flex; flex-direction: column; gap: 12px; border: 1px solid #334155; }
+        .modal input { padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px; }
         .hidden { display: none !important; }
+        .link-text { text-align: center; font-size: 13px; cursor: pointer; color: #38bdf8; text-decoration: underline; }
+
+        /* MOBİL UYUMLULUK (RESPONSIVE) - Ekran 950px altındaysa tetiklenir */
+        @media (max-width: 950px) {
+            .main-container {
+                grid-template-columns: 1fr; /* Tüm sütunlar tek bir sütun halinde alt alta gelir */
+                padding: 10px;
+                gap: 15px;
+            }
+            header {
+                padding: 10px 15px;
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+            .user-panel {
+                justify-content: center;
+            }
+            .wheel-container {
+                width: 180px;
+                height: 180px;
+            }
+            .bet-options {
+                grid-template-columns: repeat(4, 1fr); /* Mobilde bahis butonları daha rahat sığması için alt alta düzene geçer */
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Giriş / Kayıt Modal Ekranı -->
+    <!-- Giriş / Kayıt / Şifre Sıfırlama Modal Ekranı -->
     <div id="authModal" class="modal-overlay">
         <div class="modal">
             <h2 id="modalTitle" style="color: #38bdf8; text-align: center;">Giriş Yap</h2>
+            
             <input type="text" id="authUsername" placeholder="Kullanıcı Adı">
             <input type="password" id="authPassword" placeholder="Şifre">
-            <div id="registerExtraFields" class="hidden" style="display: flex; flex-direction: column; gap: 15px;">
+            
+            <!-- Kayıt Ekstra Alanlar -->
+            <div id="registerExtraFields" class="hidden" style="display: flex; flex-direction: column; gap: 12px;">
                 <input type="text" id="secQuestion" placeholder="Güvenlik Sorusu (Örn: İlk evcil hayvanınız?)">
                 <input type="text" id="secAnswer" placeholder="Güvenlik Sorusu Cevabı">
                 <input type="text" id="refCode" placeholder="Referans Kodu (İsteğe Bağlı)">
             </div>
-            <button class="btn" id="authSubmitBtn" onclick="handleAuth()">Giriş Yap</button>
-            <p style="text-align: center; font-size: 14px; cursor: pointer; color: #38bdf8;" onclick="toggleAuthMode()">Hesabın yok mu? Kayıt ol</p>
+
+            <!-- Şifre Sıfırlama Ekstra Alanlar -->
+            <div id="forgotPasswordExtraFields" class="hidden" style="display: flex; flex-direction: column; gap: 12px;">
+                <p id="displaySecQuestion" style="font-size: 13px; color: #fbbf24; text-align: center;"></p>
+                <input type="text" id="resetSecAnswer" placeholder="Güvenlik Sorusu Cevabınız">
+                <input type="password" id="newPassword" placeholder="Yeni Şifreniz">
+            </div>
+
+            <button class="btn" id="authSubmitBtn" onclick="handleAuthSubmit()">Giriş Yap</button>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 5px;">
+                <p id="toggleModeText" class="link-text" onclick="toggleAuthMode()">Hesabın yok mu? Kayıt ol</p>
+                <p id="forgotPasswordLink" class="link-text" onclick="toggleForgotPasswordMode()">Şifremi unuttum?</p>
+            </div>
         </div>
     </div>
 
@@ -79,7 +123,7 @@
 
     <!-- Ana İçerik -->
     <div class="main-container">
-        <!-- Sol Kolon: Liderlik ve Geçmiş -->
+        <!-- Sol Kolon -->
         <div class="card">
             <h3>🏆 Liderlik Tablosu</h3>
             <div class="leaderboard-list" id="leaderboardList"></div>
@@ -87,7 +131,7 @@
             <div id="historyList" style="display: flex; gap: 5px; flex-wrap: wrap;"></div>
         </div>
 
-        <!-- Orta Kolon: Çark ve Bahisler -->
+        <!-- Orta Kolon -->
         <div class="card wheel-section">
             <div class="timer" id="timerDisplay">20</div>
             <div style="position: relative;">
@@ -97,8 +141,7 @@
                 </div>
             </div>
             
-            <!-- Bahis Seçenekleri -->
-            <div style="width: 100%; margin-top: 20px;">
+            <div style="width: 100%; margin-top: 15px;">
                 <h3>Bahis Yap</h3>
                 <div class="bet-options" id="betOptionsContainer"></div>
                 <div class="chip-amounts">
@@ -110,8 +153,8 @@
             </div>
         </div>
 
-        <!-- Sağ Kolon: Canlı Sohbet -->
-        <div class="card" style="height: 100%;">
+        <!-- Sağ Kolon -->
+        <div class="card">
             <h3>💬 Canlı Sohbet</h3>
             <div class="chat-box" id="chatBox"></div>
             <div class="chat-input-area">
@@ -127,10 +170,8 @@
         let currentUsername = localStorage.getItem('username');
         let balance = 0;
         let selectedChip = 100;
-        let selectedBetItem = null;
-        let isRegisterMode = false;
+        let mode = 'login';
 
-        // Sayfa açıldığında oturum kontrolü
         window.onload = () => {
             if (token && currentUsername) {
                 document.getElementById('authModal').classList.add('hidden');
@@ -139,61 +180,92 @@
         };
 
         function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
             const titleElem = document.getElementById('modalTitle');
             const submitBtn = document.getElementById('authSubmitBtn');
-            const extraFields = document.getElementById('registerExtraFields');
-            const toggleText = document.event ? document.event.target : document.querySelector('p[onclick="toggleAuthMode()"]');
+            const regFields = document.getElementById('registerExtraFields');
+            const forgotFields = document.getElementById('forgotPasswordExtraFields');
+            const passInput = document.getElementById('authPassword');
+            const toggleText = document.getElementById('toggleModeText');
+            const forgotLink = document.getElementById('forgotPasswordLink');
 
-            if (isRegisterMode) {
+            forgotFields.classList.add('hidden');
+            passInput.style.display = 'block';
+
+            if (mode === 'login') {
+                mode = 'register';
                 titleElem.innerText = 'Kayıt Ol';
                 submitBtn.innerText = 'Kayıt Ol';
-                extraFields.classList.remove('hidden');
-                if (toggleText) toggleText.innerText = 'Zaten hesabın var mı? Giriş yap';
+                regFields.classList.remove('hidden');
+                toggleText.innerText = 'Zaten hesabın var mı? Giriş yap';
+                forgotLink.style.display = 'none';
             } else {
+                mode = 'login';
                 titleElem.innerText = 'Giriş Yap';
                 submitBtn.innerText = 'Giriş Yap';
-                extraFields.classList.add('hidden');
-                if (toggleText) toggleText.innerText = "Hesabın yok mu? Kayıt ol";
+                regFields.classList.add('hidden');
+                toggleText.innerText = "Hesabın yok mu? Kayıt ol";
+                forgotLink.style.display = 'block';
             }
         }
 
-        async function handleAuth() {
+        async function toggleForgotPasswordMode() {
+            const titleElem = document.getElementById('modalTitle');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const regFields = document.getElementById('registerExtraFields');
+            const forgotFields = document.getElementById('forgotPasswordExtraFields');
+            const passInput = document.getElementById('authPassword');
+            const toggleText = document.getElementById('toggleModeText');
+            const forgotLink = document.getElementById('forgotPasswordLink');
+            const username = document.getElementById('authUsername').value.trim();
+
+            if (mode !== 'forgot') {
+                if (!username) return alert('Lütfen önce sıfırlayacağınız Kullanıcı Adını yazın!');
+                
+                try {
+                    const res = await fetch(`/api/get-security-question?username=${username}`);
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+
+                    document.getElementById('displaySecQuestion').innerText = `Güvenlik Sorunuz: ${data.question}`;
+                    mode = 'forgot';
+                    titleElem.innerText = 'Şifre Sıfırla';
+                    submitBtn.innerText = 'Şifreyi Güncelle';
+                    passInput.style.display = 'none';
+                    regFields.classList.add('hidden');
+                    forgotFields.classList.remove('hidden');
+                    toggleText.innerText = 'Giriş ekranına dön';
+                    forgotLink.style.display = 'none';
+                } catch (err) {
+                    alert(err.message);
+                }
+            } else {
+                mode = 'login';
+                titleElem.innerText = 'Giriş Yap';
+                submitBtn.innerText = 'Giriş Yap';
+                passInput.style.display = 'block';
+                forgotFields.classList.add('hidden');
+                toggleText.innerText = "Hesabın yok mu? Kayıt ol";
+                forgotLink.style.display = 'block';
+            }
+        }
+
+        async function handleAuthSubmit() {
             const username = document.getElementById('authUsername').value.trim();
             const password = document.getElementById('authPassword').value.trim();
-            
-            if (!username || !password) {
-                return alert('Lütfen kullanıcı adı ve şifreyi doldurun!');
-            }
 
-            let url = '/api/login';
-            let body = { username, password };
+            if (!username) return alert('Kullanıcı adı boş olamaz!');
 
-            if (isRegisterMode) {
-                url = '/api/register';
-                body.securityQuestion = document.getElementById('secQuestion').value.trim();
-                body.securityAnswer = document.getElementById('secAnswer').value.trim();
-                body.refCode = document.getElementById('refCode').value.trim();
+            if (mode === 'login') {
+                if (!password) return alert('Şifre boş olamaz!');
+                try {
+                    const res = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
 
-                if (!body.securityQuestion || !body.securityAnswer) {
-                    return alert('Lütfen güvenlik sorusu ve cevabını doldurun!');
-                }
-            }
-
-            try {
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-
-                if (!res.ok) throw new Error(data.error || 'İşlem başarısız!');
-
-                if (isRegisterMode) {
-                    alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
-                    toggleAuthMode();
-                } else {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('username', data.username);
                     token = data.token;
@@ -201,10 +273,54 @@
                     balance = data.balance;
                     document.getElementById('userBalance').innerText = balance;
                     document.getElementById('authModal').classList.add('hidden');
-                    socket.emit('get_balance', { token });
+                } catch (err) {
+                    alert(err.message);
                 }
-            } catch (err) {
-                alert(err.message);
+            } else if (mode === 'register') {
+                const securityQuestion = document.getElementById('secQuestion').value.trim();
+                const securityAnswer = document.getElementById('secAnswer').value.trim();
+                const refCode = document.getElementById('refCode').value.trim();
+
+                if (!password || !securityQuestion || !securityAnswer) {
+                    return alert('Lütfen tüm zorunlu alanları doldurun!');
+                }
+
+                try {
+                    const res = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password, securityQuestion, securityAnswer, refCode })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+
+                    alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+                    toggleAuthMode();
+                } catch (err) {
+                    alert(err.message);
+                }
+            } else if (mode === 'forgot') {
+                const securityAnswer = document.getElementById('resetSecAnswer').value.trim();
+                const newPassword = document.getElementById('newPassword').value.trim();
+
+                if (!securityAnswer || !newPassword) {
+                    return alert('Lütfen güvenlik cevabını ve yeni şifrenizi girin!');
+                }
+
+                try {
+                    const res = await fetch('/api/reset-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, securityAnswer, newPassword })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+
+                    alert('Şifreniz başarıyla güncellendi! Giriş yapabilirsiniz.');
+                    toggleForgotPasswordMode();
+                } catch (err) {
+                    alert(err.message);
+                }
             }
         }
 
@@ -241,7 +357,6 @@
             socket.emit('place_bet', { token, itemId, amount: selectedChip });
         }
 
-        // Socket.io Dinleyicileri
         socket.on('init_state', (data) => {
             renderBetOptions(data.items);
             renderLeaderboard(data.leaderboard);
@@ -267,7 +382,6 @@
         socket.on('balance_update', (data) => {
             balance = data.newBalance;
             document.getElementById('userBalance').innerText = balance;
-            if (data.message) console.log(data.message);
         });
 
         socket.on('bet_confirmed', (data) => {
@@ -293,8 +407,8 @@
             const container = document.getElementById('betOptionsContainer');
             container.innerHTML = items.map(item => `
                 <div class="bet-item" onclick="placeBet('${item.id}')">
-                    <div style="font-size: 24px;">${item.icon}</div>
-                    <div style="font-size: 12px; color: #38bdf8;">${item.multiplier}x</div>
+                    <div style="font-size: 18px;">${item.icon}</div>
+                    <div style="font-size: 10px; color: #38bdf8;">${item.multiplier}x</div>
                 </div>
             `).join('');
         }
@@ -312,7 +426,7 @@
         function renderHistory(history) {
             const container = document.getElementById('historyList');
             container.innerHTML = history.map(item => `
-                <div style="background: #0f172a; padding: 5px 10px; border-radius: 6px; border: 1px solid #334155;">
+                <div style="background: #0f172a; padding: 4px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
                     ${item.icon} (${item.multiplier}x)
                 </div>
             `).join('');
@@ -322,7 +436,7 @@
             const input = document.getElementById('chatInput');
             if (!input.value.trim() || !currentUsername) return;
             socket.emit('send_chat_message', { username: currentUsername, message: input.value });
-            input.value = '';
+            input.value = ``;
         }
 
         function checkEnter(e) {
