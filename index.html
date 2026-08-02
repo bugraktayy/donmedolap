@@ -23,45 +23,75 @@
         .card { background: #1e293b; border-radius: 12px; padding: 15px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
         h3 { color: #38bdf8; font-size: 16px; border-bottom: 1px solid #334155; padding-bottom: 6px; }
         
-        /* Çark Alanı - Belirgin ve Net Tasarım */
-        .wheel-section { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
-        .timer { font-size: 32px; font-weight: bold; color: #fbbf24; margin-bottom: 8px; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); }
+        /* Dönme Dolap Çark Alanı */
+        .wheel-section { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 20px 0; }
         
-        .wheel-container { 
-            position: relative; 
-            width: 240px; 
-            height: 240px; 
-            border-radius: 50%; 
-            border: 10px solid #38bdf8; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: radial-gradient(circle, #1e293b 0%, #090d16 100%); 
-            box-shadow: 0 0 35px rgba(56, 189, 248, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.8); 
-            transition: transform 5s cubic-bezier(0.15, 0.95, 0.15, 1); 
-        }
+        . Ferris-wrapper { position: relative; width: 320px; height: 320px; display: flex; align-items: center; justify-content: center; }
+        
+        /* Üstteki Sabit İşaretçi (Ok) */
         .wheel-pointer { 
             position: absolute; 
-            top: -22px; 
+            top: -5px; 
             width: 0; 
             height: 0; 
             border-left: 14px solid transparent; 
             border-right: 14px solid transparent; 
             border-bottom: 28px solid #ef4444; 
-            z-index: 10; 
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            z-index: 50; 
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
         }
-        .center-text { 
-            font-size: 90px !important; 
-            line-height: 1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            width: 100%; 
-            height: 100%; 
-            text-align: center; 
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+
+        /* Dönen Çark İskeleti ve Kabinler */
+        .wheel-container { 
+            position: relative; 
+            width: 280px; 
+            height: 280px; 
+            border-radius: 50%; 
+            border: 8px solid #eab308; 
+            background: radial-gradient(circle, rgba(30,41,59,0.9) 0%, rgba(15,23,42,0.95) 100%); 
+            box-shadow: 0 0 35px rgba(234, 179, 8, 0.4), inset 0 0 20px rgba(0, 0, 0, 0.8); 
+            transition: transform 5s cubic-bezier(0.15, 0.95, 0.15, 1); 
         }
+
+        /* Çarkın Merkezindeki Süre Kutusu (Dönmez, sabit kalır) */
+        .wheel-center-hub {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: 4px solid #fef08a;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .hub-title { font-size: 11px; font-weight: bold; color: #451a03; text-transform: uppercase; }
+        .timer { font-size: 24px; font-weight: bold; color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
+        /* Çark Üzerindeki Kabinler (Meyveler) */
+        .cabin {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: #1e293b;
+            border: 3px solid #38bdf8;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+            transform: translate(-50%, -50%);
+        }
+        .cabin-icon { font-size: 26px; line-height: 1; }
+        .cabin-mult { font-size: 9px; font-weight: bold; color: #38bdf8; margin-top: 2px; }
 
         /* Bahis Paneli */
         .bet-options { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
@@ -100,13 +130,6 @@
             }
             .user-panel {
                 justify-content: center;
-            }
-            .wheel-container {
-                width: 200px;
-                height: 200px;
-            }
-            .center-text {
-                font-size: 75px !important;
             }
             .bet-options {
                 grid-template-columns: repeat(4, 1fr);
@@ -167,17 +190,21 @@
             <div id="historyList" style="display: flex; gap: 5px; flex-wrap: wrap;"></div>
         </div>
 
-        <!-- Orta Kolon -->
+        <!-- Orta Kolon (Dönme Dolap Alanı) -->
         <div class="card wheel-section">
-            <div class="timer" id="timerDisplay">20</div>
-            <div style="position: relative;">
+            <div class="Ferris-wrapper">
                 <div class="wheel-pointer"></div>
                 <div class="wheel-container" id="wheel">
-                    <div class="center-text" id="wheelCenterText">🎲</div>
+                    <!-- Kabinler JavaScript ile çarkın etrafına otomatik yerleştirilecek -->
+                </div>
+                <!-- Ortadaki Sabit Sayaç Alanı -->
+                <div class="wheel-center-hub">
+                    <div class="hub-title">Süre</div>
+                    <div class="timer" id="timerDisplay">20s</div>
                 </div>
             </div>
             
-            <div style="width: 100%; margin-top: 15px;">
+            <div style="width: 100%; margin-top: 20px;">
                 <h3>Bahis Yap</h3>
                 <div class="bet-options" id="betOptionsContainer"></div>
                 <div class="chip-amounts">
@@ -394,13 +421,14 @@
         }
 
         socket.on('init_state', (data) => {
+            renderWheelCabins(data.items);
             renderBetOptions(data.items);
             renderLeaderboard(data.leaderboard);
             renderHistory(data.history);
         });
 
         socket.on('timer_update', (data) => {
-            document.getElementById('timerDisplay').innerText = data.timer;
+            document.getElementById('timerDisplay').innerText = data.timer + 's';
         });
 
         socket.on('spin_wheel', (data) => {
@@ -408,7 +436,6 @@
             const degreePerItem = 360 / 7;
             const targetDegree = 360 * 5 + (data.winnerIndex * degreePerItem) + (degreePerItem / 2);
             wheel.style.transform = `rotate(-${targetDegree}deg)`;
-            document.getElementById('wheelCenterText').innerText = data.winnerItem.icon;
         });
 
         socket.on('round_result', (data) => {
@@ -438,6 +465,37 @@
             chatBox.innerHTML += `<div><b>${msg.username}</b> [${msg.time}]: ${msg.message}</div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
         });
+
+        // Çarkın Etrafına Kabinleri Çember Şeklinde Yerleştirme
+        function renderWheelCabins(items) {
+            const wheel = document.getElementById('wheel');
+            // Ortadaki merkezi kutuyu koruyarak kabinleri ekleyelim
+            let html = `
+                <div class="wheel-center-hub">
+                    <div class="hub-title">Süre</div>
+                    <div class="timer" id="timerDisplay">20s</div>
+                </div>
+            `;
+            
+            const radius = 95; // Çark merkezinden uzaklık
+            const total = items.length;
+
+            items.forEach((item, index) => {
+                const angle = (index * 360) / total - 90; // Açı hesaplama
+                const rad = (angle * Math.PI) / 180;
+                const x = 140 + radius * Math.cos(rad); // 140 -> 280px genişliğin yarısı
+                const y = 140 + radius * Math.sin(rad); // 140 -> 280px yüksekliğin yarısı
+
+                html += `
+                    <div class="cabin" style="left: ${x}px; top: ${y}px;">
+                        <div class="cabin-icon">${item.icon}</div>
+                        <div class="cabin-mult">${item.multiplier}x</div>
+                    </div>
+                `;
+            });
+
+            wheel.innerHTML = html;
+        }
 
         function renderBetOptions(items) {
             const container = document.getElementById('betOptionsContainer');
