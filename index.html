@@ -195,7 +195,6 @@
                     document.getElementById('userMenu').classList.remove('hidden');
                     document.getElementById('gameContainer').classList.remove('hidden');
 
-                    // Giriş yapıldıktan sonra sohbet mesajlarını çekmeye başla ve periyodik yenile
                     fetchMessages();
                     chatInterval = setInterval(fetchMessages, 3000);
                 }
@@ -214,7 +213,11 @@
                     data.messages.forEach(msg => {
                         const div = document.createElement('div');
                         div.className = 'bg-gray-800 p-2 rounded shadow text-sm';
-                        div.innerHTML = `<strong class="text-yellow-400">${msg.username}:</strong> <span class="text-gray-200">${msg.text}</span>`;
+                        if (msg.isAdmin) {
+                            div.innerHTML = `<strong class="text-red-400 bg-red-900/40 px-1 rounded">🛡️ ${msg.username}:</strong> <span class="text-yellow-200 font-bold">${msg.text}</span>`;
+                        } else {
+                            div.innerHTML = `<strong class="text-yellow-400">${msg.username}:</strong> <span class="text-gray-200">${msg.text}</span>`;
+                        }
                         chatContainer.appendChild(div);
                     });
                     chatContainer.scrollTop = chatContainer.scrollHeight;

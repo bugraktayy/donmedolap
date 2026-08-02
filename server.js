@@ -121,15 +121,12 @@ app.post('/api/reset-password', (req, res) => {
 
 // --- SOHBET (CHAT) ENDPOINTLERİ ---
 
-// Sohbet Mesajlarını Getir
 app.get('/api/chat/messages', (req, res) => {
     loadData();
-    // Son 50 mesajı gönder
     const recentMessages = chatDb.messages.slice(-50);
     res.json({ success: true, messages: recentMessages });
 });
 
-// Yeni Mesaj Gönder
 app.post('/api/chat/send', (req, res) => {
     loadData();
     const { username, text } = req.body;
@@ -138,16 +135,76 @@ app.post('/api/chat/send', (req, res) => {
     chatDb.messages.push({
         username,
         text,
+        isAdmin: false,
         timestamp: Date.now()
     });
 
-    // 100 mesajdan fazlasını silerek şişmeyi önleyelim
     if (chatDb.messages.length > 100) {
         chatDb.messages = chatDb.messages.slice(-100);
     }
 
     saveChatData();
     res.json({ success: true });
+});
+
+// --- ADMIN ENDPOINTLERİ ---
+
+app.get('/api/admin/users', (req, res) => {
+    loadData();
+    const sanitizedUsers = db.users.map(u => ({
+        username: u.username,
+        balance: u.balance !== undefined ? u.balance : 0,
+        securityQuestion: u.securityQuestion
+    }));
+    res.json({ success: true, users: sanitizedUsers });
+});
+
+app.post('/api/admin/update-balance', (req, res) => {
+    loadData();
+    const { username, newBalance } = req.body;
+
+    const user = db.users.find(u => u.username === username);
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+
+    user.balance = Number(newBalance);
+    saveData();
+
+    res.json({ success: true, message: 'Bakiye güncellendi!' });
+});
+
+app.post('/api/admin/delete-user', (req, res) => {
+    loadData();
+    const { username } = req.body;
+
+    const initialLength = db.users.length;
+    db.users = db.users.filter(u => u.username !== username);
+
+    if (db.users.length === initialLength) {
+        return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+    }
+
+    saveData();
+    res.json({ success: true, message: 'Kullanıcı silindi!' });
+});
+
+app.post('/api/admin/send-message', (req, res) => {
+    loadData();
+    const { text } = req.body;
+    if (!text) return res.status(400).json({ error: 'Mesaj metni boş olamaz!' });
+
+    chatDb.messages.push({
+        username: 'YÖNETİCİ',
+        text,
+        isAdmin: true,
+        timestamp: Date.now()
+    });
+
+    if (chatDb.messages.length > 100) {
+        chatDb.messages = chatDb.messages.slice(-100);
+    }
+
+    saveChatData();
+    res.json({ success: true, message: 'Sunucu mesajı gönderildi!' });
 });
 
 // Sunucuyu Başlat
