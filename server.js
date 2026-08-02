@@ -190,9 +190,41 @@ app.post('/api/admin/broadcast', (req, res) => {
     if (!message) return res.status(400).json({ error: 'Duyuru mesajı boş olamaz!' });
 
     const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-    io.emit('new_chat_message', { username: '📢 SİSTEM DUYURUSU', message, time });
+    io.emit('new_chat_message', { username: '📢 Mr.Greenden BUrda', message, time });
     res.json({ message: 'Duyuru başarıyla gönderildi!' });
 });
+// Admin: Kullanıcı Bakiyesini Güncelleme
+app.post('/api/admin/update-balance', (req, res) => {
+    const { username, amount, action } = req.body; // action: 'add' veya 'set'
+    const user = users.find(u => u.username === username);
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+
+    const numAmount = Number(amount);
+    if (isNaN(numAmount)) return res.status(400).json({ error: 'Geçersiz miktar!' });
+
+    if (action === 'set') {
+        user.balance = numAmount;
+    } else if (action === 'add') {
+        user.balance += numAmount;
+    }
+
+    saveUsers();
+    io.emit('leaderboard_update', getLeaderboard());
+    res.json({ message: 'Bakiye başarıyla güncellendi!', newBalance: user.balance });
+});
+
+// Admin: Kullanıcıyı Silme / Banlama
+app.post('/api/admin/delete-user', (req, res) => {
+    const { username } = req.body;
+    const index = users.findIndex(u => u.username === username);
+    if (index === -1) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+
+    users.splice(index, 1);
+    saveUsers();
+    io.emit('leaderboard_update', getLeaderboard());
+    res.json({ message: 'Kullanıcı sistemden silindi!' });
+});
+
 
 // --- SOCKET.IO ---
 io.on('connection', (socket) => {
