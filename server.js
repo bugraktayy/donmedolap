@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -10,12 +11,25 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'cark_oyunu_gizli_anahtar_12345';
+const USERS_FILE = path.join(__dirname, 'users.json');
 
 app.use(express.json());
-app.use(express.static(__dirname)); // Tüm dosyaları (index.html, admin.html vb.) ana dizinden sunar
+app.use(express.static(__dirname)); // Ana dizindeki HTML dosyalarını okur
 
-// BELLEK İÇİ VERİ DEPOSU
-const users = [];
+// KULLANICILARI DOSYADAN YÜKLE
+let users = [];
+if (fs.existsSync(USERS_FILE)) {
+    try {
+        users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+    } catch (e) {
+        users = [];
+    }
+}
+
+function saveUsers() {
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+}
+
 const securityQuestions = {};
 const bonusTimers = {};
 
@@ -34,7 +48,7 @@ let history = [];
 let currentBets = [];
 let timer = 20;
 let isSpinning = false;
-let forcedNextItem = null; // Admin için hile/sonuç belirleme
+let forcedNextItem = null;
 
 function getLeaderboard() {
     return users
@@ -67,12 +81,14 @@ app.post('/api/register', (req, res) => {
         const referrer = users.find(u => u.username === refCode);
         if (referrer) {
             referrer.balance += 250; 
-            startingBalance += 250;  
+            startingBalance += 250;
+            saveUsers(); // Referans bonusu güncellendiğinde kaydet
         }
     }
 
     users.push({ username, password, balance: startingBalance });
     securityQuestions[username] = { question: securityQuestion, answer: securityAnswer.toLowerCase() };
+    saveUsers(); // YENİ KULLANICIYI DOSYAYA KAYDET
 
     io.emit('leaderboard_update', getLeaderboard());
     res.json({ message: 'Kayıt başarılı! Giriş yapabilirsiniz.' });
@@ -106,6 +122,7 @@ app.post('/api/reset-password', (req, res) => {
     }
 
     user.password = newPassword;
+    saveUsers(); // Şifre değişince kaydet
     res.json({ message: 'Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz.' });
 });
 
@@ -125,6 +142,8 @@ app.post('/api/claim-bonus', (req, res) => {
 
     user.balance += 500;
     bonusTimers[username] = now;
+    saveUsers(); // Bakiye değişince kaydet
+
     io.emit('leaderboard_update', getLeaderboard());
     res.json({ message: '🎁 500 TL Günlük bonus bakiyenize eklendi!', newBalance: user.balance });
 });
@@ -175,6 +194,8 @@ io.on('connection', (socket) => {
             if (user.balance < data.amount) return socket.emit('error_msg', 'Yetersiz bakiye!');
 
             user.balance -= data.amount;
+            saveUsers(); // Bahis oynandığında bakiyeyi kaydet
+
             currentBets.push({
                 username: user.username,
                 socketId: socket.id,
@@ -210,7 +231,7 @@ setInterval(() => {
             if (forcedNextItem !== null && forcedNextItem !== undefined && forcedNextItem !== "") {
                 winnerIndex = items.findIndex(i => i.id === String(forcedNextItem));
                 if (winnerIndex === -1) winnerIndex = Math.floor(Math.random() * items.length);
-                forcedNextItem = null; // Sıfırla
+                forcedNextItem = null;
             } else {
                 winnerIndex = Math.floor(Math.random() * items.length);
             }
@@ -225,6 +246,7 @@ setInterval(() => {
                         const user = users.find(u => u.username === bet.username);
                         if (user) {
                             user.balance += winAmount;
+                            saveUsers(); // Kazanılan ikramiyeyi kaydet
                             io.to(bet.socketId).emit('balance_update', {
                                 newBalance: user.balance,
                                 message: `🎉 TEBRİKLER! ${winnerItem.icon} ile ${winAmount} TL kazandınız!`
