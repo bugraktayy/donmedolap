@@ -6,416 +6,307 @@
     <title>Canlı Çark Oyunu</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
-        body { background: #0a0f1d; color: #fff; padding: 15px; display: flex; justify-content: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 15px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; }
+        header { background: #1e293b; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
+        .logo { font-size: 24px; font-weight: bold; color: #38bdf8; }
+        .user-panel { display: flex; gap: 15px; align-items: center; }
+        .balance-box { background: #0f172a; padding: 8px 15px; border-radius: 8px; border: 1px solid #334155; }
+        .btn { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn:hover { background: #2563eb; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: dc2626; }
+        .main-container { display: grid; grid-template-columns: 280px 1fr 300px; gap: 20px; padding: 20px; flex: 1; max-width: 1400px; margin: 0 auto; width: 100%; }
+        .card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; display: flex; flex-direction: column; gap: 15px; }
+        h3 { color: #38bdf8; font-size: 18px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
         
-        /* 🔒 GİRİŞ / KAYIT EKRANI (MODAL) */
-        .auth-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 15, 29, 0.95); z-index: 100;
-            display: flex; justify-content: center; align-items: center; padding: 20px;
-        }
-        .auth-card {
-            background: #152238; border: 2px solid #233554; border-radius: 12px;
-            padding: 25px; width: 100%; max-width: 380px; text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-        .auth-card h2 { color: #f39c12; margin-bottom: 15px; }
-        .auth-tabs { display: flex; margin-bottom: 15px; gap: 4px; background: #0a0f1d; padding: 4px; border-radius: 8px; }
-        .auth-tab { flex: 1; padding: 8px 4px; border: none; background: transparent; color: #aaa; cursor: pointer; border-radius: 6px; font-weight: bold; font-size: 12px; }
-        .auth-tab.active { background: #e67e22; color: #fff; }
-        .auth-card input, .auth-card select { width: 100%; background: #0a0f1d; border: 1px solid #233554; color: #fff; padding: 12px; border-radius: 6px; margin-bottom: 10px; font-size: 14px; }
-        .auth-card button.btn-submit { width: 100%; background: #2ecc71; border: none; color: #fff; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 5px; }
-        .auth-card button.btn-submit:hover { background: #27ae60; }
+        /* Çark Alanı */
+        .wheel-section { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .timer { font-size: 32px; font-weight: bold; color: #fbbf24; margin-bottom: 10px; }
+        .wheel-container { position: relative; width: 300px; height: 300px; border-radius: 50%; border: 8px solid #38bdf8; display: flex; align-items: center; justify-content: center; background: #0f172a; box-shadow: 0 0 25px rgba(56, 189, 248, 0.3); transition: transform 5s cubic-bezier(0.15, 0.95, 0.15, 1); }
+        .wheel-pointer { position: absolute; top: -20px; width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #ef4444; z-index: 10; }
+        .center-text { font-size: 28px; font-weight: bold; }
 
-        /* Üst Bilgi Barı */
-        .header { display: flex; justify-content: space-between; align-items: center; background: #152238; padding: 12px 15px; border-radius: 10px; border: 1px solid #233554; }
-        .logout-btn { background: #e74c3c; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-left: 5px; }
+        /* Bahis Paneli */
+        .bet-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .bet-item { background: #0f172a; border: 2px solid #334155; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .bet-item:hover, .bet-item.selected { border-color: #38bdf8; background: #1e293b; }
+        .chip-amounts { display: flex; gap: 10px; margin-top: 10px; }
+        .chip { flex: 1; padding: 8px; background: #334155; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; }
+        .chip.active { background: #38bdf8; color: #0f172a; }
 
-        .bonus-btn { background: #2ecc71; color: #fff; font-weight: bold; padding: 10px; border: none; border-radius: 8px; width: 100%; cursor: pointer; font-size: 15px; box-shadow: 0 4px 10px rgba(46,204,113,0.3); }
-        .bonus-btn:hover { background: #27ae60; }
+        /* Chat ve Liderlik */
+        .chat-box { flex: 1; height: 200px; background: #0f172a; border-radius: 8px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 14px; border: 1px solid #334155; }
+        .chat-input-area { display: flex; gap: 5px; }
+        .chat-input-area input { flex: 1; padding: 8px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; }
+        .leaderboard-list { display: flex; flex-direction: column; gap: 8px; }
+        .leaderboard-item { display: flex; justify-content: space-between; background: #0f172a; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
 
-        .timer-box { text-align: center; font-size: 20px; font-weight: bold; color: #f39c12; background: #152238; padding: 8px; border-radius: 8px; border: 1px solid #f39c12; }
-
-        /* 🎡 DÖNME DOLAP ÇARK ALANI */
-        .wheel-wrapper { position: relative; width: 280px; height: 280px; margin: 10px auto; display: flex; justify-content: center; align-items: center; }
-        
-        .wheel-pointer { 
-            position: absolute; top: -15px; left: 50%; transform: translateX(-50%); 
-            width: 0; height: 0; 
-            border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #e74c3c; 
-            z-index: 10; filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.8));
-        }
-
-        .wheel-circle { 
-            width: 100%; height: 100%; border-radius: 50%; background: #152238; border: 6px solid #f39c12; 
-            position: relative; transition: transform 5s cubic-bezier(0.15, 0.90, 0.20, 1.00); 
-            box-shadow: 0 0 20px rgba(243, 156, 18, 0.3);
-        }
-
-        .wheel-item { 
-            position: absolute; width: 60px; height: 60px; top: 50%; left: 50%; 
-            margin-top: -30px; margin-left: -30px; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; font-size: 24px; border-radius: 50%; background: #1a2c4e; border: 2px solid #2c3e50;
-        }
-        
-        .wheel-item.winner { border-color: #f1c40f; background: #f39c12; transform: scale(1.3); box-shadow: 0 0 15px #f1c40f; z-index: 5; }
-
-        /* Geçmiş & Bahis */
-        .history-box { display: flex; gap: 8px; background: #152238; padding: 10px; border-radius: 8px; overflow-x: auto; min-height: 45px; }
-        .history-item { font-size: 20px; background: #1c2d4a; padding: 4px 8px; border-radius: 6px; }
-
-        .bet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .bet-card { background: #152238; border: 2px solid #233554; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .bet-card:hover { border-color: #f39c12; background: #1c2d4a; }
-        .bet-card.selected { border-color: #e67e22; background: #2c3e50; }
-        .bet-icon { font-size: 28px; }
-        .bet-mult { color: #aaa; font-size: 13px; margin-top: 4px; }
-
-        .bet-controls { display: flex; gap: 10px; background: #152238; padding: 10px; border-radius: 8px; }
-        .bet-controls input { width: 100%; background: #0a0f1d; border: 1px solid #233554; color: #fff; padding: 10px; border-radius: 6px; font-size: 16px; }
-        .bet-controls button { background: #e67e22; border: none; color: #fff; padding: 10px 20px; font-weight: bold; border-radius: 6px; cursor: pointer; }
-
-        .chat-box { background: #152238; border-radius: 10px; padding: 10px; height: 180px; display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 5px; }
-        .chat-input-area { display: flex; gap: 8px; margin-top: 8px; }
-        .chat-input-area input { flex: 1; background: #0a0f1d; border: 1px solid #233554; color: #fff; padding: 8px; border-radius: 6px; }
-        .chat-input-area button { background: #e74c3c; color: #fff; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        /* Modal Giriş Ekranı */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal { background: #1e293b; padding: 30px; border-radius: 12px; width: 350px; display: flex; flex-direction: column; gap: 15px; border: 1px solid #334155; }
+        .modal input { padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<!-- 🔒 GİRİŞ / KAYIT / ŞİFRE SIFIRLAMA MODAL EKRANI -->
-<div class="auth-overlay" id="authOverlay">
-    <div class="auth-card">
-        <h2>🎡 Çark Oyunu</h2>
-        <div class="auth-tabs">
-            <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Giriş</button>
-            <button class="auth-tab" id="tabRegister" onclick="switchTab('register')">Kayıt Ol</button>
-            <button class="auth-tab" id="tabReset" onclick="switchTab('reset')">Şifremi Unuttum</button>
-        </div>
-
-        <input type="text" id="authUsername" placeholder="Kullanıcı Adı" oninput="checkUserQuestion()">
-        <input type="password" id="authPassword" placeholder="Şifre">
-
-        <!-- Güvenlik Sorusu Alanları -->
-        <div id="securityFields" style="display: none;">
-            <select id="authQuestionSelect" style="display: none;">
-                <option value="İlk evcil hayvanınızın adı nedir?">İlk evcil hayvanınızın adı nedir?</option>
-                <option value="En sevdiğiniz ilkokul öğretmeninizin adı nedir?">En sevdiğiniz ilkokul öğretmeninizin adı nedir?</option>
-                <option value="Doğduğunuz şehir neresidir?">Doğduğunuz şehir neresidir?</option>
-                <option value="Annenizin kızlık soyadı nedir?">Annenizin kızlık soyadı nedir?</option>
-            </select>
-
-            <p id="authQuestionLabel" style="display: none; color: #f39c12; font-size: 13px; margin: 5px 0 10px 0; text-align: left;"></p>
-
-            <input type="text" id="authAnswer" placeholder="Güvenlik Sorusu Cevabı">
-        </div>
-
-        <button class="btn-submit" id="authBtn" onclick="handleAuth()">Giriş Yap</button>
-    </div>
-</div>
-
-<div class="container">
-    <!-- Üst Bilgi -->
-    <div class="header">
-        <div>Hoş geldin, <b id="userDisplay">Oyuncu</b> <button class="logout-btn" onclick="logout()">Çıkış</button></div>
-        <div>Bakiye: <b id="balanceDisplay" style="color:#2ecc71;">0 TL</b></div>
-    </div>
-
-    <button class="bonus-btn" onclick="claimBonus()">🎁 Günlük Bonus Al (+500 TL)</button>
-
-    <div class="timer-box">Kalan Süre: <span id="timerVal">20</span>s</div>
-
-    <!-- Geçmiş Turlar -->
-    <div class="history-box" id="historyBox"></div>
-
-    <!-- 🎡 DÖNME DOLAP ÇARK -->
-    <div class="wheel-wrapper">
-        <div class="wheel-pointer"></div>
-        <div class="wheel-circle" id="wheelCircle"></div>
-    </div>
-
-    <!-- Bahis Seçenekleri -->
-    <div class="bet-grid" id="betGrid"></div>
-
-    <!-- Bahis Miktarı ve Yatır -->
-    <div class="bet-controls">
-        <input type="number" id="betAmount" placeholder="Bahis Miktarı" value="100">
-        <button onclick="placeBet()">Bahis Yap</button>
-    </div>
-
-    <!-- Sohbet -->
-    <div class="chat-box">
-        <div class="chat-messages" id="chatMsgs"></div>
-        <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Mesajınızı yazın...">
-            <button onclick="sendChat()">Gönder</button>
+    <!-- Giriş / Kayıt Modal Ekranı -->
+    <div id="authModal" class="modal-overlay">
+        <div class="modal">
+            <h2 id="modalTitle" style="color: #38bdf8; text-align: center;">Giriş Yap</h2>
+            <input type="text" id="authUsername" placeholder="Kullanıcı Adı">
+            <input type="password" id="authPassword" placeholder="Şifre">
+            <div id="registerExtraFields" class="hidden" style="display: flex; flex-direction: column; gap: 15px;">
+                <input type="text" id="secQuestion" placeholder="Güvenlik Sorusu (Örn: İlk evcil hayvanınız?)">
+                <input type="text" id="secAnswer" placeholder="Güvenlik Sorusu Cevabı">
+                <input type="text" id="refCode" placeholder="Referans Kodu (İsteğe Bağlı)">
+            </div>
+            <button class="btn" id="authSubmitBtn" onclick="handleAuth()">Giriş Yap</button>
+            <p style="text-align: center; font-size: 14px; cursor: pointer; color: #38bdf8;" onclick="toggleAuthMode()">Hesabın yok mu? Kayıt ol</p>
         </div>
     </div>
-</div>
 
-<script>
-    const socket = io();
-    let selectedItemId = null;
-    let itemsData = [];
-    let currentRotation = 0;
-    let authMode = 'login';
+    <!-- Üst Bar -->
+    <header>
+        <div class="logo">🎡 Canlı Çark Oyunu</div>
+        <div class="user-panel">
+            <button class="btn" onclick="claimBonus()">🎁 Günlük Bonus (500 TL)</button>
+            <div class="balance-box">Bakiye: <span id="userBalance" style="color: #38bdf8; font-weight: bold;">0</span> TL</div>
+            <button class="btn btn-danger" onclick="logout()">Çıkış Yap</button>
+        </div>
+    </header>
 
-    window.onload = () => {
-        const token = localStorage.getItem('token');
-        const username = localStorage.getItem('username');
-        if (token && username) {
-            document.getElementById('authOverlay').style.display = 'none';
-            document.getElementById('userDisplay').innerText = username;
-            document.getElementById('balanceDisplay').innerText = (localStorage.getItem('balance') || '1000') + ' TL';
-        }
-    };
+    <!-- Ana İçerik -->
+    <div class="main-container">
+        <!-- Sol Kolon: Liderlik ve Geçmiş -->
+        <div class="card">
+            <h3>🏆 Liderlik Tablosu</h3>
+            <div class="leaderboard-list" id="leaderboardList"></div>
+            <h3>📜 Son Çark Sonuçları</h3>
+            <div id="historyList" style="display: flex; gap: 5px; flex-wrap: wrap;"></div>
+        </div>
 
-    function switchTab(mode) {
-        authMode = mode;
-        document.getElementById('tabLogin').classList.toggle('active', mode === 'login');
-        document.getElementById('tabRegister').classList.toggle('active', mode === 'register');
-        document.getElementById('tabReset').classList.toggle('active', mode === 'reset');
-
-        const secFields = document.getElementById('securityFields');
-        const qSelect = document.getElementById('authQuestionSelect');
-        const qLabel = document.getElementById('authQuestionLabel');
-        const passInput = document.getElementById('authPassword');
-
-        if (mode === 'login') {
-            secFields.style.display = 'none';
-            document.getElementById('authBtn').innerText = 'Giriş Yap';
-            passInput.placeholder = 'Şifre';
-        } else if (mode === 'register') {
-            secFields.style.display = 'block';
-            qSelect.style.display = 'block';
-            qLabel.style.display = 'none';
-            document.getElementById('authBtn').innerText = 'Kayıt Ol';
-            passInput.placeholder = 'Şifre';
-        } else if (mode === 'reset') {
-            secFields.style.display = 'block';
-            qSelect.style.display = 'none';
-            qLabel.style.display = 'block';
-            qLabel.innerText = 'Kullanıcı adınızı yazınca sorunuz gelecek...';
-            document.getElementById('authBtn').innerText = 'Şifreyi Sıfırla';
-            passInput.placeholder = 'Yeni Şifreniz';
-        }
-    }
-
-    async function checkUserQuestion() {
-        if (authMode !== 'reset') return;
-        const username = document.getElementById('authUsername').value.trim();
-        if (!username) return;
-
-        try {
-            const res = await fetch('/api/get-security-question', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username })
-            });
-            const data = await res.json();
-            if (data.question) {
-                document.getElementById('authQuestionLabel').innerText = "Soru: " + data.question;
-            } else {
-                document.getElementById('authQuestionLabel').innerText = "Kullanıcı bulunamadı!";
-            }
-        } catch(e) {}
-    }
-
-    async function handleAuth() {
-        const username = document.getElementById('authUsername').value.trim();
-        const password = document.getElementById('authPassword').value.trim();
-        const securityAnswer = document.getElementById('authAnswer').value.trim();
-
-        if (!username || !password) return alert('Lütfen tüm alanları doldurun!');
-
-        let payload = { username, password };
-        let endpoint = '/api/login';
-
-        if (authMode === 'register') {
-            endpoint = '/api/register';
-            const securityQuestion = document.getElementById('authQuestionSelect').value;
-            if (!securityAnswer) return alert('Lütfen güvenlik sorusu cevabını girin!');
-            payload = { ...payload, securityQuestion, securityAnswer };
-        } else if (authMode === 'reset') {
-            endpoint = '/api/reset-password';
-            if (!securityAnswer) return alert('Lütfen güvenlik sorusu cevabını girin!');
-            payload = { username, newPassword: password, securityAnswer };
-        }
-
-        try {
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-            if (data.error) return alert(data.error);
-
-            if (authMode === 'register' || authMode === 'reset') {
-                alert(data.message);
-                switchTab('login');
-            } else {
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('username', data.username);
-                localStorage.setItem('balance', data.balance);
-                
-                document.getElementById('userDisplay').innerText = data.username;
-                document.getElementById('balanceDisplay').innerText = data.balance + ' TL';
-                document.getElementById('authOverlay').style.display = 'none';
-            }
-        } catch (err) {
-            alert('Bağlantı hatası oluştu!');
-        }
-    }
-
-    function logout() {
-        localStorage.clear();
-        location.reload();
-    }
-
-    // OYUN VE ÇARK MANTIĞI
-    socket.on('init_state', (data) => {
-        itemsData = data.items;
-        renderWheel(data.items);
-        renderBetGrid(data.items);
-        updateHistory(data.history);
-    });
-
-    function renderWheel(items) {
-        const circle = document.getElementById('wheelCircle');
-        circle.innerHTML = '';
-        const total = items.length;
-        const radius = 100;
-
-        items.forEach((item, index) => {
-            const angle = (index * (360 / total)) * (Math.PI / 180);
-            const x = Math.round(radius * Math.sin(angle));
-            const y = Math.round(-radius * Math.cos(angle));
-
-            const el = document.createElement('div');
-            el.className = 'wheel-item';
-            el.id = `wheel-item-${index}`;
-            el.style.transform = `translate(${x}px, ${y}px)`;
-            el.innerText = item.icon;
-            circle.appendChild(el);
-        });
-    }
-
-    function renderBetGrid(items) {
-        const grid = document.getElementById('betGrid');
-        grid.innerHTML = '';
-        items.forEach(item => {
-            grid.innerHTML += `
-                <div class="bet-card" id="card-${item.id}" onclick="selectBet('${item.id}')">
-                    <div class="bet-icon">${item.icon}</div>
-                    <div class="bet-mult">x${item.multiplier}</div>
+        <!-- Orta Kolon: Çark ve Bahisler -->
+        <div class="card wheel-section">
+            <div class="timer" id="timerDisplay">20</div>
+            <div style="position: relative;">
+                <div class="wheel-pointer"></div>
+                <div class="wheel-container" id="wheel">
+                    <div class="center-text" id="wheelCenterText">🎲</div>
                 </div>
-            `;
-        });
-    }
+            </div>
+            
+            <!-- Bahis Seçenekleri -->
+            <div style="width: 100%; margin-top: 20px;">
+                <h3>Bahis Yap</h3>
+                <div class="bet-options" id="betOptionsContainer"></div>
+                <div class="chip-amounts">
+                    <button class="chip active" onclick="setChip(100)">100</button>
+                    <button class="chip" onclick="setChip(500)">500</button>
+                    <button class="chip" onclick="setChip(1000)">1000</button>
+                    <button class="chip" onclick="setChip(5000)">5000</button>
+                </div>
+            </div>
+        </div>
 
-    function selectBet(id) {
-        selectedItemId = id;
-        document.querySelectorAll('.bet-card').forEach(c => c.classList.remove('selected'));
-        document.getElementById(`card-${id}`).classList.add('selected');
-    }
+        <!-- Sağ Kolon: Canlı Sohbet -->
+        <div class="card" style="height: 100%;">
+            <h3>💬 Canlı Sohbet</h3>
+            <div class="chat-box" id="chatBox"></div>
+            <div class="chat-input-area">
+                <input type="text" id="chatInput" placeholder="Mesaj yaz..." onkeypress="checkEnter(event)">
+                <button class="btn" onclick="sendMessage()">Gönder</button>
+            </div>
+        </div>
+    </div>
 
-    socket.on('timer_update', (data) => {
-        document.getElementById('timerVal').innerText = data.timer;
-    });
+    <script>
+        const socket = io();
+        let token = localStorage.getItem('token');
+        let currentUsername = localStorage.getItem('username');
+        let balance = 0;
+        let selectedChip = 100;
+        let selectedBetItem = null;
+        let isRegisterMode = false;
 
-    socket.on('spin_wheel', (data) => {
-        const totalItems = itemsData.length;
-        const degreesPerItem = 360 / totalItems;
-        const targetDegree = 360 - (data.winnerIndex * degreesPerItem);
-        currentRotation += (360 * 5) + (targetDegree - (currentRotation % 360));
+        // Sayfa açıldığında oturum kontrolü
+        window.onload = () => {
+            if (token && currentUsername) {
+                document.getElementById('authModal').classList.add('hidden');
+                socket.emit('get_balance', { token });
+            }
+        };
 
-        const circle = document.getElementById('wheelCircle');
-        circle.style.transform = `rotate(${currentRotation}deg)`;
-
-        setTimeout(() => {
-            document.querySelectorAll('.wheel-item').forEach(i => i.classList.remove('winner'));
-            const winnerEl = document.getElementById(`wheel-item-${data.winnerIndex}`);
-            if (winnerEl) winnerEl.classList.add('winner');
-        }, 5000);
-    });
-
-    socket.on('balance_update', (data) => {
-        document.getElementById('balanceDisplay').innerText = data.newBalance + ' TL';
-        localStorage.setItem('balance', data.newBalance);
-        if (data.message) alert(data.message);
-    });
-
-    socket.on('round_result', (data) => {
-        updateHistory(data.history);
-    });
-
-    function updateHistory(history) {
-        const box = document.getElementById('historyBox');
-        box.innerHTML = '';
-        if (history) {
-            history.forEach(h => {
-                box.innerHTML += `<div class="history-item">${h.icon}</div>`;
-            });
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('modalTitleinnerText = isRegisterMode ? 'Kayıt Ol' : 'Giriş Yap';
+            document.getElementById('modalTitle').innerText = isRegisterMode ? 'Kayıt Ol' : 'Giriş Yap';
+            document.getElementById('authSubmitBtn').innerText = isRegisterMode ? 'Kayıt Ol' : 'Giriş Yap';
+            document.getElementById('registerExtraFields').classList.toggle('hidden', !isRegisterMode);
         }
-    }
 
-    function placeBet() {
-        const token = localStorage.getItem('token');
-        if (!token) return alert('Lütfen önce giriş yapın!');
+        async function handleAuth() {
+            const username = document.getElementById('authUsername').value;
+            const password = document.getElementById('authPassword').value;
+            
+            let url = '/api/login';
+            let body = { username, password };
 
-        const amount = Number(document.getElementById('betAmount').value);
-        if (!selectedItemId) return alert('Lütfen bir öğe seçin!');
-        if (!amount || amount <= 0) return alert('Geçerli miktar girin!');
+            if (isRegisterMode) {
+                url = '/api/register';
+                body.securityQuestion = document.getElementById('secQuestion').value;
+                body.securityAnswer = document.getElementById('secAnswer').value;
+                body.refCode = document.getElementById('refCode').value;
+            }
 
-        socket.emit('place_bet', {
-            token: token,
-            itemId: selectedItemId,
-            amount: amount
-        });
-    }
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
 
-    async function claimBonus() {
-        const username = localStorage.getItem('username');
-        if (!username) return alert('Lütfen önce giriş yapın!');
+                if (!res.ok) throw new Error(data.error);
 
-        const res = await fetch('/api/claim-bonus', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username })
-        });
-        const data = await res.json();
-        alert(data.message || data.error);
-        if (data.newBalance) {
-            document.getElementById('balanceDisplay').innerText = data.newBalance + ' TL';
-            localStorage.setItem('balance', data.newBalance);
+                if (isRegisterMode) {
+                    alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+                    toggleAuthMode();
+                } else {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    token = data.token;
+                    currentUsername = data.username;
+                    balance = data.balance;
+                    document.getElementById('userBalance').innerText = balance;
+                    document.getElementById('authModal').classList.add('hidden');
+                }
+            } catch (err) {
+                alert(err.message);
+            }
         }
-    }
 
-    function sendChat() {
-        const username = localStorage.getItem('username') || 'Misafir';
-        const input = document.getElementById('chatInput');
-        if (input.value.trim()) {
-            socket.emit('send_chat_message', { username, message: input.value });
+        function logout() {
+            localStorage.clear();
+            location.reload();
+        }
+
+        async function claimBonus() {
+            try {
+                const res = await fetch('/api/claim-bonus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUsername })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                balance = data.newBalance;
+                document.getElementById('userBalance').innerText = balance;
+                alert(data.message);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function setChip(amount) {
+            selectedChip = amount;
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function placeBet(itemId) {
+            if (!token) return alert('Önce giriş yapmalısınız!');
+            socket.emit('place_bet', { token, itemId, amount: selectedChip });
+        }
+
+        // Socket.io Dinleyicileri
+        socket.on('init_state', (data) => {
+            renderBetOptions(data.items);
+            renderLeaderboard(data.leaderboard);
+            renderHistory(data.history);
+        });
+
+        socket.on('timer_update', (data) => {
+            document.getElementById('timerDisplay').innerText = data.timer;
+        });
+
+        socket.on('spin_wheel', (data) => {
+            const wheel = document.getElementById('wheel');
+            const degreePerItem = 360 / 7;
+            const targetDegree = 360 * 5 + (data.winnerIndex * degreePerItem) + (degreePerItem / 2);
+            wheel.style.transform = `rotate(-${targetDegree}deg)`;
+            document.getElementById('wheelCenterText').innerText = data.winnerItem.icon;
+        });
+
+        socket.on('round_result', (data) => {
+            renderHistory(data.history);
+        });
+
+        socket.on('balance_update', (data) => {
+            balance = data.newBalance;
+            document.getElementById('userBalance').innerText = balance;
+            if (data.message) console.log(data.message);
+        });
+
+        socket.on('bet_confirmed', (data) => {
+            balance = data.newBalance;
+            document.getElementById('userBalance').innerText = balance;
+        });
+
+        socket.on('leaderboard_update', (list) => {
+            renderLeaderboard(list);
+        });
+
+        socket.on('error_msg', (msg) => {
+            alert(msg);
+        });
+
+        socket.on('new_chat_message', (msg) => {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += `<div><b>${msg.username}</b> [${msg.time}]: ${msg.message}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        function renderBetOptions(items) {
+            const container = document.getElementById('betOptionsContainer');
+            container.innerHTML = items.map(item => `
+                <div class="bet-item" onclick="placeBet('${item.id}')">
+                    <div style="font-size: 24px;">${item.icon}</div>
+                    <div style="font-size: 12px; color: #38bdf8;">${item.multiplier}x</div>
+                </div>
+            `).join('');
+        }
+
+        function renderLeaderboard(list) {
+            const container = document.getElementById('leaderboardList');
+            container.innerHTML = list.map((u, i) => `
+                <div class="leaderboard-item">
+                    <span>#${i+1} ${u.username}</span>
+                    <span style="color: #38bdf8; font-weight: bold;">${u.balance} TL</span>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory(history) {
+            const container = document.getElementById('historyList');
+            container.innerHTML = history.map(item => `
+                <div style="background: #0f172a; padding: 5px 10px; border-radius: 6px; border: 1px solid #334155;">
+                    ${item.icon} (${item.multiplier}x)
+                </div>
+            `).join('');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            if (!input.value.trim() || !currentUsername) return;
+            socket.emit('send_chat_message', { username: currentUsername, message: input.value });
             input.value = '';
         }
-    }
 
-    socket.on('new_chat_message', (data) => {
-        const box = document.getElementById('chatMsgs');
-        box.innerHTML += `<div><b>[${data.time}] ${data.username}:</b> ${data.message}</div>`;
-        box.scrollTop = box.scrollHeight;
-    });
-
-    socket.on('error_msg', (msg) => alert(msg));
-    socket.on('bet_confirmed', (data) => {
-        document.getElementById('balanceDisplay').innerText = data.newBalance + ' TL';
-        localStorage.setItem('balance', data.newBalance);
-    });
-</script>
+        function checkEnter(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+    </script>
 </body>
 </html>

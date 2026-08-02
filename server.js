@@ -16,13 +16,24 @@ const USERS_FILE = path.join(__dirname, 'users.json');
 app.use(express.json());
 app.use(express.static(__dirname)); // Ana dizindeki HTML dosyalarını okur
 
-// KULLANICILARI DOSYADAN YÜKLE
+// KULLANICILARI GÜVENLİ ŞEKİLDE YÜKLE VE YAZ
 let users = [];
 if (fs.existsSync(USERS_FILE)) {
     try {
-        users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+        const data = fs.readFileSync(USERS_FILE, 'utf8');
+        users = data ? JSON.parse(data) : [];
     } catch (e) {
         users = [];
+    }
+} else {
+    fs.writeFileSync(USERS_FILE, JSON.stringify([], null, 2));
+}
+
+function saveUsers() {
+    try {
+        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+    } catch (e) {
+        console.error("Kullanıcılar kaydedilirken hata oluştu:", e);
     }
 }
 
@@ -172,6 +183,15 @@ app.post('/api/admin/set-number', (req, res) => {
     const { number } = req.body;
     forcedNextItem = number;
     res.json({ message: `Sonraki çark sonucu ayarlandı: ${number}` });
+});
+// Admin Canlı Sohbet Duyurusu Gönderme
+app.post('/api/admin/broadcast', (req, res) => {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'Duyuru mesajı boş olamaz!' });
+
+    const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    io.emit('new_chat_message', { username: '📢 SİSTEM DUYURUSU', message, time });
+    res.json({ message: 'Duyuru başarıyla gönderildi!' });
 });
 
 // --- SOCKET.IO ---
