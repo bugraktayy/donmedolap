@@ -65,7 +65,7 @@ let gameState = {
 
 // Kayıt Ol API
 app.post('/api/register', (req, res) => {
-    const { username, password, securityQuestion, securityAnswer } = req.body;
+    const { username, password, securityQuestion, securityAnswer, refCode } = req.body;
     
     if (!username || !password) {
         return res.status(400).json({ error: 'Kullanıcı adı ve şifre zorunludur!' });
@@ -86,8 +86,9 @@ app.post('/api/register', (req, res) => {
     };
 
     db.users.push(newUser);
-    saveData();
+    saveData(); // Dosyaya kaydet
 
+    console.log("Yeni kullanıcı kaydedildi:", username); // Konsolda bunu görüyor musun kontrol et!
     res.json({ success: true, message: 'Kayıt başarılı!' });
 });
 
