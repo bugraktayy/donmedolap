@@ -1,328 +1,295 @@
+// Gerekli modüllerin projeye dahil edilmesi
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const jwt = require('jsonwebtoken');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const jwt = require('jsonwebtoken');
 
+// Express uygulaması ve HTTP Sunucusunun oluşturulması
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = 'cark_oyunu_gizli_anahtar_12345';
-const USERS_FILE = path.join(__dirname, 'users.json');
-
+// Middleware tanımlamaları
 app.use(express.json());
-app.use(express.static(__dirname)); // Ana dizindeki HTML dosyalarını okur
+app.use(express.static(path.join(__dirname, 'public'))); // Frontend dosyalarının bulunduğu klasör
 
-// KULLANICILARI GÜVENLİ ŞEKİLDE YÜKLE VE YAZ
-let users = [];
-if (fs.existsSync(USERS_FILE)) {
+// Sabitler ve Veritabanı Dosyası Yolu
+const JWT_SECRET = "gizli_anahtarim_123"; 
+const DATA_FILE = path.join(__dirname, 'users.json');
+
+// --- VERİTABANI YÖNETİMİ (JSON DOSYASI SİSTEMİ) ---
+let db = {
+    users: [],
+    history: []
+};
+
+// Sunucu açıldığında daha önceden kaydedilmiş kullanıcılar var mı diye kontrol et ve oku
+if (fs.existsSync(DATA_FILE)) {
     try {
-        const data = fs.readFileSync(USERS_FILE, 'utf8');
-        users = data ? JSON.parse(data) : [];
+        const fileData = fs.readFileSync(DATA_FILE, 'utf8');
+        db = JSON.parse(fileData);
+        console.log("Kayıtlı veriler 'users.json' dosyasından başarıyla yüklendi.");
     } catch (e) {
-        users = [];
+        console.log("Veri dosyası okunamadı, boş veri tabanı ile başlatılıyor.");
     }
 } else {
-    fs.writeFileSync(USERS_FILE, JSON.stringify([], null, 2));
+    saveData(); // Dosya yoksa ilk oluşturma işlemini yap
 }
 
-function saveUsers() {
+// Verileri JSON dosyasına anlık ve kalıcı olarak yazdıran fonksiyon
+function saveData() {
     try {
-        fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-    } catch (e) {
-        console.error("Kullanıcılar kaydedilirken hata oluştu:", e);
+        fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf8');
+    } catch (err) {
+        console.error("Veri kaydedilirken hata oluştu:", err);
     }
 }
+// ----------------------------------------------------
 
-function saveUsers() {
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-}
-
-const securityQuestions = {};
-const bonusTimers = {};
-
-// Çark Öğeleri
-const items = [
-    { id: '1', icon: '🍌', multiplier: 2 },
-    { id: '2', icon: '🍎', multiplier: 3 },
-    { id: '3', icon: '🍇', multiplier: 5 },
-    { id: '4', icon: '🍊', multiplier: 10 },
-    { id: '5', icon: '🍉', multiplier: 15 },
-    { id: '6', icon: '🍓', multiplier: 20 },
-    { id: '7', icon: '🍗', multiplier: 45 }
+// Çark Üzerinde Yer Alan Meyveler ve Çarpan Bilgileri
+const wheelItems = [
+    { id: 'banana', icon: '🍌', multiplier: 2 },
+    { id: 'apple', icon: '🍎', multiplier: 3 },
+    { id: 'grapes', icon: '🍇', multiplier: 5 },
+    { id: 'orange', icon: '🍊', multiplier: 10 },
+    { id: 'watermelon', icon: '🍉', multiplier: 15 },
+    { id: 'strawberry', icon: '🍓', multiplier: 20 },
+    { id: 'meat', icon: '🍗', multiplier: 45 }
 ];
 
-let history = [];
-let currentBets = [];
-let timer = 20;
-let isSpinning = false;
-let forcedNextItem = null;
+// Oyunun anlık durum yönetimi
+let gameState = {
+    timer: 20,
+    status: 'betting', // 'betting' (bahis aşaması) veya 'spinning' (dönme aşaması)
+    bets: {} // Oyuncuların yaptığı bahislerin tutulduğu nesne
+};
 
-function getLeaderboard() {
-    return users
-        .map(u => ({ username: u.username, balance: u.balance }))
-        .sort((a, b) => b.balance - a.balance)
-        .slice(0, 5);
-}
+// ================= API ENDPOINT'LERİ (HTTP) =================
 
-function getTableBetsSummary() {
-    const summary = {};
-    items.forEach(item => { summary[item.id] = 0; });
-    currentBets.forEach(bet => {
-        summary[bet.itemId] = (summary[bet.itemId] || 0) + bet.amount;
-    });
-    return summary;
-}
-
-// --- KULLANICI AUTH API ROTALARI ---
+// 1. Yeni Kullanıcı Kayıt İşlemi
 app.post('/api/register', (req, res) => {
     const { username, password, securityQuestion, securityAnswer, refCode } = req.body;
-    if (!username || !password || !securityQuestion || !securityAnswer) {
-        return res.status(400).json({ error: 'Tüm alanları doldurun!' });
-    }
-    if (users.find(u => u.username === username)) {
-        return res.status(400).json({ error: 'Bu kullanıcı adı zaten alınmış.' });
+    
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Kullanıcı adı ve şifre zorunludur!' });
     }
 
-    let startingBalance = 1000;
-    if (refCode) {
-        const referrer = users.find(u => u.username === refCode);
-        if (referrer) {
-            referrer.balance += 250; 
-            startingBalance += 250;
-            saveUsers(); // Referans bonusu güncellendiğinde kaydet
-        }
+    const existingUser = db.users.find(u => u.username === username);
+    if (existingUser) {
+        return res.status(400).json({ error: 'Bu kullanıcı adı zaten alınmış!' });
     }
 
-    users.push({ username, password, balance: startingBalance });
-    securityQuestions[username] = { question: securityQuestion, answer: securityAnswer.toLowerCase() };
-    saveUsers(); // YENİ KULLANICIYI DOSYAYA KAYDET
+    const newUser = {
+        username,
+        password, 
+        securityQuestion: securityQuestion || '',
+        securityAnswer: securityAnswer || '',
+        balance: 1000, // Yeni kullanıcılara 1000 TL başlangıç ikramiyesi
+        lastBonusDate: null
+    };
 
-    io.emit('leaderboard_update', getLeaderboard());
-    res.json({ message: 'Kayıt başarılı! Giriş yapabilirsiniz.' });
+    db.users.push(newUser);
+    saveData(); // Yeni kullanıcıyı hemen kalıcı dosyaya kaydet
+
+    res.json({ success: true, message: 'Kayıt başarılı! Şimdi giriş yapabilirsiniz.' });
 });
 
+// 2. Kullanıcı Giriş İşlemi
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
-    const user = users.find(u => u.username === username && u.password === password);
+    
+    const user = db.users.find(u => u.username === username && u.password === password);
     if (!user) {
-        return res.status(400).json({ error: 'Hatalı kullanıcı adı veya şifre!' });
+        return res.status(400).json({ error: 'Kullanıcı adı veya şifre hatalı!' });
     }
-    const token = jwt.sign({ username: user.username }, JWT_SECRET);
+
+    // Oturum için JWT token üretimi
+    const token = jwt.sign({ username: user.username }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, username: user.username, balance: user.balance });
 });
 
+// 3. Şifremi Unuttum İçin Güvenlik Sorusunu Getirme
 app.get('/api/get-security-question', (req, res) => {
     const { username } = req.query;
-    const qData = securityQuestions[username];
-    if (!qData) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-    res.json({ question: qData.question });
+    const user = db.users.find(u => u.username === username);
+    if (!user) return res.status(404).json({ error: 'Böyle bir kullanıcı bulunamadı!' });
+
+    res.json({ question: user.securityQuestion || 'Güvenlik sorusu tanımlanmamış.' });
 });
 
+// 4. Güvenlik Sorusu Doğrulayıp Şifre Sıfırlama
 app.post('/api/reset-password', (req, res) => {
-    const { username, newPassword, securityAnswer } = req.body;
-    const qData = securityQuestions[username];
-    const user = users.find(u => u.username === username);
-
-    if (!user || !qData) return res.status(400).json({ error: 'Kullanıcı bulunamadı!' });
-    if (qData.answer !== securityAnswer.toLowerCase()) {
+    const { username, securityAnswer, newPassword } = req.body;
+    const user = db.users.find(u => u.username === username);
+    
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+    if (user.securityAnswer !== securityAnswer) {
         return res.status(400).json({ error: 'Güvenlik sorusu cevabı yanlış!' });
     }
 
     user.password = newPassword;
-    saveUsers(); // Şifre değişince kaydet
-    res.json({ message: 'Şifreniz başarıyla güncellendi. Giriş yapabilirsiniz.' });
+    saveData(); // Güncellenen şifreyi dosyaya kaydet
+
+    res.json({ success: true, message: 'Şifreniz başarıyla güncellendi!' });
 });
 
+// 5. Günlük Bonus Talep Etme İşlemi
 app.post('/api/claim-bonus', (req, res) => {
     const { username } = req.body;
-    const user = users.find(u => u.username === username);
+    const user = db.users.find(u => u.username === username);
     if (!user) return res.status(400).json({ error: 'Kullanıcı bulunamadı!' });
 
-    const now = Date.now();
-    const lastClaim = bonusTimers[username] || 0;
-    const cooldown = 24 * 60 * 60 * 1000; 
-
-    if (now - lastClaim < cooldown) {
-        const remainingHours = Math.ceil((cooldown - (now - lastClaim)) / (1000 * 60 * 60));
-        return res.status(400).json({ error: `Bonus almak için ${remainingHours} saat beklemelisiniz!` });
+    const today = new Date().toDateString();
+    if (user.lastBonusDate === today) {
+        return res.status(400).json({ error: 'Bugün zaten günlük bonusunuzu aldınız!' });
     }
 
     user.balance += 500;
-    bonusTimers[username] = now;
-    saveUsers(); // Bakiye değişince kaydet
+    user.lastBonusDate = today;
+    saveData(); // Bonus miktarını ve tarihini dosyaya kaydet
 
-    io.emit('leaderboard_update', getLeaderboard());
-    res.json({ message: '🎁 500 TL Günlük bonus bakiyenize eklendi!', newBalance: user.balance });
+    res.json({ success: true, newBalance: user.balance, message: '500 TL günlük bonus eklendi!' });
 });
 
-// --- ADMIN PANEL API ROTALARI ---
-app.get('/api/admin/stats', (req, res) => {
-    const totalUsers = users.length;
-    const totalBalance = users.reduce((acc, u) => acc + u.balance, 0);
-    res.json({
-        totalUsers,
-        totalBalance,
-        activeBetsCount: currentBets.length,
-        historyCount: history.length
-    });
-});
+// ================= SOCKET.IO BAĞLANTI VE OYUN MANTIĞI =================
 
-app.get('/api/admin/users', (req, res) => {
-    const userList = users.map(u => ({
-        username: u.username,
-        balance: u.balance
-    }));
-    res.json(userList);
-});
-
-app.post('/api/admin/set-number', (req, res) => {
-    const { number } = req.body;
-    forcedNextItem = number;
-    res.json({ message: `Sonraki çark sonucu ayarlandı: ${number}` });
-});
-// Admin Canlı Sohbet Duyurusu Gönderme
-app.post('/api/admin/broadcast', (req, res) => {
-    const { message } = req.body;
-    if (!message) return res.status(400).json({ error: 'Duyuru mesajı boş olamaz!' });
-
-    const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-    io.emit('new_chat_message', { username: '📢 Mr.Greenden BUrda', message, time });
-    res.json({ message: 'Duyuru başarıyla gönderildi!' });
-});
-// Admin: Kullanıcı Bakiyesini Güncelleme
-app.post('/api/admin/update-balance', (req, res) => {
-    const { username, amount, action } = req.body; // action: 'add' veya 'set'
-    const user = users.find(u => u.username === username);
-    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-
-    const numAmount = Number(amount);
-    if (isNaN(numAmount)) return res.status(400).json({ error: 'Geçersiz miktar!' });
-
-    if (action === 'set') {
-        user.balance = numAmount;
-    } else if (action === 'add') {
-        user.balance += numAmount;
-    }
-
-    saveUsers();
-    io.emit('leaderboard_update', getLeaderboard());
-    res.json({ message: 'Bakiye başarıyla güncellendi!', newBalance: user.balance });
-});
-
-// Admin: Kullanıcıyı Banlama / Aktif Etme (Silmek yerine pasif yapma)
-app.post('/api/admin/delete-user', (req, res) => {
-    const { username } = req.body;
-    const user = users.find(u => u.username === username);
-    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-
-    // Eğer zaten banlıysa banını kaldır, değilse banla (veya kalıcı olarak banlı yap)
-    user.isBanned = !user.isBanned; 
-
-    saveUsers();
-    io.emit('leaderboard_update', getLeaderboard());
-    res.json({ message: user.isBanned ? 'Kullanıcı banlandı!' : 'Kullanıcının banı kaldırıldı!', isBanned: user.isBanned });
-});
-
-
-// --- SOCKET.IO ---
 io.on('connection', (socket) => {
+    console.log('Bir kullanıcı bağlandı, Socket ID:', socket.id);
+
+    // Yeni bağlanan oyuncuya oyunun mevcut durumunu, liderlik tablosunu ve geçmişi gönder
     socket.emit('init_state', {
-        items,
-        history,
+        items: wheelItems,
         leaderboard: getLeaderboard(),
-        tableBets: getTableBetsSummary()
+        history: db.history.slice(-10)
     });
 
+    // Kullanıcının anlık bakiyesini doğrula ve güncelle
+    socket.on('get_balance', (data) => {
+        try {
+            const decoded = jwt.verify(data.token, JWT_SECRET);
+            const user = db.users.find(u => u.username === decoded.username);
+            if (user) {
+                socket.emit('balance_update', { newBalance: user.balance });
+            }
+        } catch (e) {
+            // Token geçersiz veya süresi dolmuş
+        }
+    });
+
+    // Bahis Yapma İşlemi
     socket.on('place_bet', (data) => {
-        if (isSpinning) return socket.emit('error_msg', 'Tur devam ederken bahis yapılamaz!');
+        if (gameState.status !== 'betting') {
+            return socket.emit('error_msg', 'Şu an bahis yapamazsınız, çark dönüyor!');
+        }
         
         try {
             const decoded = jwt.verify(data.token, JWT_SECRET);
-            const user = users.find(u => u.username === decoded.username);
-
-            if (!user) return socket.emit('error_msg', 'Kullanıcı bulunamadı!');
+            const user = db.users.find(u => u.username === decoded.username);
+            
+            if (!user) return socket.emit('error_msg', 'Kullanıcı oturumu geçersiz!');
             if (user.balance < data.amount) return socket.emit('error_msg', 'Yetersiz bakiye!');
 
+            // Bakiyeden düş ve dosyaya işle
             user.balance -= data.amount;
-            saveUsers(); // Bahis oynandığında bakiyeyi kaydet
+            saveData();
 
-            currentBets.push({
-                username: user.username,
-                socketId: socket.id,
-                itemId: data.itemId,
-                amount: data.amount
-            });
+            // Bahis listesini düzenle
+            if (!gameState.bets[socket.id]) {
+                gameState.bets[socket.id] = { username: user.username, items: {} };
+            }
+            gameState.bets[socket.id].items[data.itemId] = (gameState.bets[socket.id].items[data.itemId] || 0) + data.amount;
 
             socket.emit('bet_confirmed', { newBalance: user.balance });
-            io.emit('table_bets_update', getTableBetsSummary());
             io.emit('leaderboard_update', getLeaderboard());
         } catch (e) {
-            socket.emit('error_msg', 'Oturum geçersiz!');
+            socket.emit('error_msg', 'Yetkilendirme hatası oluştu!');
         }
     });
 
+    // Canlı Sohbet Mesajı Gönderme
     socket.on('send_chat_message', (data) => {
-        const time = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         io.emit('new_chat_message', { username: data.username, message: data.message, time });
+    });
+
+    socket.on('disconnect', () => {
+        console.log('Bir kullanıcı ayrıldı:', socket.id);
+        delete gameState.bets[socket.id];
     });
 });
 
-// OYUN DÖNGÜSÜ
+// En zengin ilk 5 kullanıcıyı hesaplayan liderlik tablosu fonksiyonu
+function getLeaderboard() {
+    return [...db.users]
+        .sort((a, b) => b.balance - a.balance)
+        .slice(0, 5)
+        .map(u => ({ username: u.username, balance: u.balance }));
+}
+
+// Oyun Döngüsü ve Zamanlayıcı (Her 1 saniyede bir çalışır)
 setInterval(() => {
-    if (!isSpinning) {
-        timer--;
-        io.emit('timer_update', { timer });
+    gameState.timer--;
 
-        if (timer <= 0) {
-            isSpinning = true;
-            timer = 20;
+    if (gameState.timer <= 0) {
+        if (gameState.status === 'betting') {
+            gameState.status = 'spinning';
+            
+            // Kazanan öğeyi rastgele belirle
+            const winnerIndex = Math.floor(Math.random() * wheelItems.length);
+            const winningItem = wheelItems[winnerIndex];
 
-            let winnerIndex;
-            if (forcedNextItem !== null && forcedNextItem !== undefined && forcedNextItem !== "") {
-                winnerIndex = items.findIndex(i => i.id === String(forcedNextItem));
-                if (winnerIndex === -1) winnerIndex = Math.floor(Math.random() * items.length);
-                forcedNextItem = null;
-            } else {
-                winnerIndex = Math.floor(Math.random() * items.length);
-            }
+            // Tüm kullanıcılara çarkın dönmesi komutunu ilet
+            io.emit('spin_wheel', { winnerIndex });
 
-            const winnerItem = items[winnerIndex];
-            io.emit('spin_wheel', { winnerIndex, winnerItem });
-
+            // Çarkın dönme animasyonu süresi (3 saniye sonra sonuçları hesapla)
             setTimeout(() => {
-                currentBets.forEach(bet => {
-                    if (bet.itemId === winnerItem.id) {
-                        const winAmount = bet.amount * winnerItem.multiplier;
-                        const user = users.find(u => u.username === bet.username);
+                // Kazanan öğeyi geçmiş listesine ekle (en fazla son 20 kayıt tutulur)
+                db.history.push(winningItem);
+                if (db.history.length > 20) db.history.shift();
+
+                // Yapılan bahisleri kontrol et ve kazananlara ödemelerini yap
+                for (let socketId in gameState.bets) {
+                    const betData = gameState.bets[socketId];
+                    const userBets = betData.items;
+                    const username = betData.username;
+
+                    if (userBets[winningItem.id]) {
+                        const betAmount = userBets[winningItem.id];
+                        const winAmount = betAmount * winningItem.multiplier;
+                        
+                        // Kullanıcıyı veritabanında bul ve kazandığı tutarı bakiyesine ekle
+                        const user = db.users.find(u => u.username === username);
                         if (user) {
                             user.balance += winAmount;
-                            saveUsers(); // Kazanılan ikramiyeyi kaydet
-                            io.to(bet.socketId).emit('balance_update', {
-                                newBalance: user.balance,
-                                message: `🎉 TEBRİKLER! ${winnerItem.icon} ile ${winAmount} TL kazandınız!`
-                            });
+                            
+                            // Eğer oyuncu hâlâ bağlıysa anlık yeni bakiyesini gönder
+                            const socket = io.sockets.sockets.get(socketId);
+                            if (socket) {
+                                socket.emit('balance_update', { newBalance: user.balance });
+                            }
                         }
                     }
-                });
+                }
 
-                history.unshift(winnerItem);
-                if (history.length > 10) history.pop();
+                saveData(); // Tüm bakiye güncellemelerini ve oyun geçmişini kalıcı olarak dosyaya kaydet
 
-                io.emit('round_result', { winnerItem, history });
+                io.emit('round_result', { history: db.history.slice(-10) });
                 io.emit('leaderboard_update', getLeaderboard());
 
-                currentBets = [];
-                io.emit('table_bets_update', getTableBetsSummary());
-                isSpinning = false;
-            }, 5000);
+                // Yeni tur için oyun durumunu sıfırla ve yeniden başlat
+                gameState.bets = {};
+                gameState.status = 'betting';
+                gameState.timer = 20;
+            }, 3000);
         }
     }
+
+    io.emit('timer_update', { timer: gameState.timer });
 }, 1000);
 
-server.listen(PORT, () => {
-    console.log(`🚀 Sunucu ${PORT} portunda yayında!`);
+// Sunucuyu 3000 portunda dinlemeye başla
+server.listen(3000, () => {
+    console.log('Sunucu 3000 portunda başarıyla çalışıyor...');
 });
