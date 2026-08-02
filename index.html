@@ -147,17 +147,25 @@
         }
 
         async function handleAuth() {
-            const username = document.getElementById('authUsername').value;
-            const password = document.getElementById('authPassword').value;
+            const username = document.getElementById('authUsername').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
             
+            if (!username || !password) {
+                return alert('Lütfen kullanıcı adı ve şifreyi doldurun!');
+            }
+
             let url = '/api/login';
             let body = { username, password };
 
             if (isRegisterMode) {
                 url = '/api/register';
-                body.securityQuestion = document.getElementById('secQuestion').value;
-                body.securityAnswer = document.getElementById('secAnswer').value;
-                body.refCode = document.getElementById('refCode').value;
+                body.securityQuestion = document.getElementById('secQuestion').value.trim();
+                body.securityAnswer = document.getElementById('secAnswer').value.trim();
+                body.refCode = document.getElementById('refCode').value.trim();
+
+                if (!body.securityQuestion || !body.securityAnswer) {
+                    return alert('Lütfen güvenlik sorusu ve cevabını doldurun!');
+                }
             }
 
             try {
@@ -168,7 +176,7 @@
                 });
                 const data = await res.json();
 
-                if (!res.ok) throw new Error(data.error);
+                if (!res.ok) throw new Error(data.error || 'İşlem başarısız!');
 
                 if (isRegisterMode) {
                     alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
@@ -181,6 +189,7 @@
                     balance = data.balance;
                     document.getElementById('userBalance').innerText = balance;
                     document.getElementById('authModal').classList.add('hidden');
+                    socket.emit('get_balance', { token });
                 }
             } catch (err) {
                 alert(err.message);
