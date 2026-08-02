@@ -12,15 +12,15 @@ const io = new Server(server);
 app.use(express.json());
 app.use(express.static(__dirname)); // Tüm dosyaları ana klasörden sunar
 
+// Ana sayfa yönlendirmesi
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Sabitler (Tek bir kez tanımlandı)
 const JWT_SECRET = "gizli_anahtarim_123"; 
 const DATA_FILE = path.join(__dirname, 'users.json');
 
-// --- VERİTABANI YÖNETİMİ (JSON DOSYASI) ---
+// --- VERİTABANI YÖNETİMİ VE OTOMATİK KULLANICI ---
 let db = {
     users: [],
     history: []
@@ -34,8 +34,20 @@ if (fs.existsSync(DATA_FILE)) {
     } catch (e) {
         console.log("Veri dosyası okunamadı, boş başlatılıyor.");
     }
-} else {
+} 
+
+// Eğer veritabanında hiç kullanıcı yoksa, otomatik bir test hesabı oluştur
+if (!db.users || db.users.length === 0) {
+    db.users.push({
+        username: "admin",
+        password: "123",
+        securityQuestion: "Test",
+        securityAnswer: "Test",
+        balance: 5000,
+        lastBonusDate: null
+    });
     saveData();
+    console.log(">>> Otomatik test kullanıcısı oluşturuldu! Kullanıcı adı: admin, Şifre: 123");
 }
 
 function saveData() {
@@ -86,9 +98,9 @@ app.post('/api/register', (req, res) => {
     };
 
     db.users.push(newUser);
-    saveData(); // Dosyaya kaydet
+    saveData();
 
-    console.log("Yeni kullanıcı kaydedildi:", username); // Konsolda bunu görüyor musun kontrol et!
+    console.log(">>> Yeni kullanıcı başarıyla kaydedildi:", username);
     res.json({ success: true, message: 'Kayıt başarılı!' });
 });
 

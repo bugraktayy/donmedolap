@@ -358,7 +358,9 @@
                     toggleAuthMode();
                 } catch (err) {
                     alert(err.message);
+                    }
                 }
+            }
             } else if (mode === 'forgot') {
                 const securityAnswer = document.getElementById('resetSecAnswer').value.trim();
                 const newPassword = document.getElementById('newPassword').value.trim();
