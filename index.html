@@ -5,6 +5,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canlı Çark Oyunu</title>
     <script src="/socket.io/socket.io.js"></script>
+    <script>
+    // En tepeye ekliyoruz ki tarayıcı daha sayfa yüklenirken bu fonksiyonu bilsin
+    window.toggleAuthMode = function() {
+        console.log("toggleAuthMode çalıştı!");
+        if (typeof mode !== 'undefined') {
+            mode = mode === 'login' ? 'register' : 'login';
+        }
+        const authTitle = document.getElementById('authTitle');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const toggleText = document.getElementById('toggleAuthText');
+        
+        if (authTitle) {
+            if (authTitle.innerText.includes('Giriş')) {
+                authTitle.innerText = 'Kayıt Ol';
+                if (authSubmitBtn) authSubmitBtn.innerText = 'Kayıt Ol';
+                if (toggleText) toggleText.innerText = 'Zaten hesabın var mı? Giriş yap';
+            } else {
+                authTitle.innerText = 'Giriş Yap';
+                if (authSubmitBtn) authSubmitBtn.innerText = 'Giriş Yap';
+                if (toggleText) toggleText.innerText = 'Hesabın yok mu? Kayıt ol';
+            }
+        }
+    };
+    window.handleAuthSubmit = async function() {
+    const username = document.getElementById('authUsername').value.trim();
+    const password = document.getElementById('authPassword').value.trim();
+
+    if (!username) return alert('Kullanıcı adı boş olamaz!');
+
+    // mode değişkeninin login veya register olduğunu varsayıyoruz
+    const currentMode = typeof mode !== 'undefined' ? mode : 'login';
+
+    if (currentMode === 'login') {
+        if (!password) return alert('Şifre boş olamaz!');
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('username', data.username);
+            
+            alert('Giriş başarılı!');
+            location.reload(); // Sayfayı yenileyerek oyuna giriş yap
+        } catch (err) {
+            alert(err.message);
+        }
+    } else {
+        const securityQuestion = document.getElementById('secQuestion')?.value.trim() || '';
+        const securityAnswer = document.getElementById('secAnswer')?.value.trim() || '';
+
+        if (!password) {
+            return alert('Şifre boş olamaz!');
+        }
+
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password, securityQuestion, securityAnswer })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            alert('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+            if (typeof toggleAuthMode === 'function') toggleAuthMode();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+    async function getSecurityQuestion(username) {
+    try {
+        const res = await fetch(`/api/get-security-question?username=${encodeURIComponent(username)}`);
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error);
+
+        // Bu satırı buraya, verinin geldiği yere koymalısın:
+        document.getElementById('displaySecQuestion').innerText = `Güvenlik Sorunuz: ${data.question}`;
+        
+    } catch (err) {
+        alert(err.message);
+    }
+}
+</script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0b0f19; color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
