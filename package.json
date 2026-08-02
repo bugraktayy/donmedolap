@@ -1,0 +1,16 @@
+{
+  "name": "canli-rulet-oyunu",
+  "version": "1.0.0",
+  "description": "Canli Rulet Oyunu",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.22.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.3.1",
+    "socket.io": "^4.8.3"
+  }
+}
