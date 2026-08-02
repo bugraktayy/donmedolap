@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çark Oyunu - Super Admin Paneli</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; padding: 15px; margin: 0; }
+        h1, h2 { color: #f39c12; margin-top: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
+        .card { background: #1e1e1e; padding: 15px; border-radius: 10px; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .stat-box { display: flex; justify-content: space-between; background: #2a2a2a; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
+        .stat-val { color: #2ecc71; font-weight: bold; font-size: 1.1em; }
+        input, select, button, textarea { padding: 10px; margin: 6px 0; border-radius: 6px; border: none; font-size: 15px; width: 100%; box-sizing: border-box; }
+        input, select, textarea { background: #2a2a2a; color: #fff; border: 1px solid #444; }
+        button { background: #e67e22; color: #fff; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #d35400; }
+        .btn-reload { background: #2980b9; }
+        .btn-reload:hover { background: #3498db; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; font-size: 14px; }
+        th { background: #2a2a2a; color: #f39c12; }
+        .user-list-container { max-height: 200px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>⚙️ Oyun Yönetim Paneli</h1>
+
+    <div class="grid">
+        <!-- 1. İstatistikler -->
+        <div class="card">
+            <h2>📊 Sistem & Kasa İstatistikleri</h2>
+            <div class="stat-box">
+                <span>Top. Kayıtlı Oyuncu:</span>
+                <span id="statUsers" class="stat-val">0</span>
+            </div>
+            <div class="stat-box">
+                <span>Piyasadaki Toplam TL:</span>
+                <span id="statBalance" class="stat-val">0 TL</span>
+            </div>
+            <div class="stat-box">
+                <span>Masadaki Aktif Bahis:</span>
+                <span id="statActiveBets" class="stat-val">0 TL</span>
+            </div>
+            <button class="btn-reload" onclick="loadStats()">🔄 Verileri Yenile</button>
+        </div>
+
+        <!-- 2. Gelecek Öğeyi Ayarlama -->
+        <div class="card">
+            <h2>🎡 Çark Müdahalesi (Gelecek Tur)</h2>
+            <label>Gelecek Tur Hangi Öğe Kazansın?</label>
+            <select id="itemSelect">
+                <option value="0">🍎 Elma (5x)</option>
+                <option value="1">🍊 Portakal (5x)</option>
+                <option value="2">🥬 Marul (20x)</option>
+                <option value="3">🐟 Balık (10x)</option>
+                <option value="4">🍔 Hamburger (15x)</option>
+                <option value="5">🍗 Tavuk (45x)</option>
+            </select>
+            <button onclick="setNextItem()">Sonucu Kaydet</button>
+        </div>
+
+        <!-- 3. Bakiye Müdahale -->
+        <div class="card">
+            <h2>💰 Bakiye Yükle / Düzenle</h2>
+            <input type="text" id="targetUser" placeholder="Kullanıcı Adı">
+            <input type="number" id="newBalance" placeholder="Yeni Bakiye (TL)">
+            <button onclick="updateBalance()">Bakiyeyi Güncelle</button>
+        </div>
+
+        <!-- 4. Canlı Duyuru Gönderme -->
+        <div class="card">
+            <h2>📢 Canlı Sohbet Duyurusu</h2>
+            <input type="text" id="announceMsg" placeholder="Duyuru metnini yazın...">
+            <button onclick="sendAnnouncement()">Oyunculara Gönder</button>
+        </div>
+    </div>
+
+    <!-- 5. Kayıtlı Kullanıcı Listesi -->
+    <div class="card" style="margin-top: 15px;">
+        <h2>👥 Kayıtlı Oyuncular</h2>
+        <div class="user-list-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Kullanıcı Adı</th>
+                        <th>Mevcut Bakiye</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr><td colspan="2">Yükleniyor...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/admin/stats');
+                const data = await res.json();
+                
+                document.getElementById('statUsers').innerText = data.totalUsers;
+                document.getElementById('statBalance').innerText = data.totalBalance + ' TL';
+                document.getElementById('statActiveBets').innerText = data.activeBetTotal + ' TL';
+
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = '';
+                data.users.forEach(u => {
+                    tbody.innerHTML += `<tr><td>${u.username}</td><td>${u.balance} TL</td></tr>`;
+                });
+            } catch (err) {
+                alert('İstatistikler yüklenemedi!');
+            }
+        }
+        // İstatistikleri ve Kasayı Çeken Fonksiyon Örneği
+async function loadAdminStats() {
+    try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+        if (res.ok) {
+            document.getElementById('total-users').innerText = data.totalUsers;
+            document.getElementById('total-balance').innerText = data.totalBalance + ' TL';
+        }
+    } catch (e) {
+        console.error("İstatistikler yüklenemedi");
+    }
+}
+
+// Kayıtlı Oyuncuları Çeken Fonksiyon Örneği
+async function loadUsersList() {
+    try {
+        const res = await fetch('/api/admin/users');
+        const users = await res.json();
+        if (res.ok) {
+            const tableBody = document.getElementById('users-table-body');
+            if (tableBody) {
+                tableBody.innerHTML = '';
+                users.forEach(user => {
+                    tableBody.innerHTML += `<tr><td>${user.username}</td><td>${user.balance} TL</td></tr>`;
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Kullanıcılar yüklenemedi");
+    }
+}
+
+        async function setNextItem() {
+            const selectedIndex = document.getElementById('itemSelect').value;
+            const res = await fetch('/api/admin/set-number', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number: selectedIndex })
+            });
+            const data = await res.json();
+            alert(data.message);
+        }
+
+        async function updateBalance() {
+            const username = document.getElementById('targetUser').value;
+            const balance = document.getElementById('newBalance').value;
+            const res = await fetch('/api/admin/update-balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, balance })
+            });
+            const data = await res.json();
+            alert(data.message);
+            loadStats(); // Listeyi güncelle
+        }
+
+        async function sendAnnouncement() {
+            const message = document.getElementById('announceMsg').value;
+            const res = await fetch('/api/admin/broadcast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+            const data = await res.json();
+            alert(data.message);
+            document.getElementById('announceMsg').value = '';
+        }
+
+        // Sayfa açılınca verileri getir
+        loadStats();
+    </script>
+</body>
+</html>
