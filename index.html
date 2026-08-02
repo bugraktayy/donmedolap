@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giriş ve Kayıt Sistemi</title>
+    <title>Sistem ve Sohbet</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col justify-between">
@@ -61,18 +61,29 @@
             </div>
         </div>
 
-        <!-- BAŞARILI GİRİŞ EKRANI -->
-        <div id="gameContainer" class="hidden text-center bg-gray-800 p-8 rounded-xl shadow-lg">
-            <h2 class="text-3xl font-bold mb-4 text-yellow-400">Hoş Geldiniz!</h2>
-            <p class="text-gray-400">Sisteme başarılı bir şekilde giriş yaptınız.</p>
+        <!-- BAŞARILI GİRİŞ VE SOHBET EKRANI -->
+        <div id="gameContainer" class="hidden w-full max-w-2xl bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col h-[500px]">
+            <h2 class="text-2xl font-bold mb-4 text-yellow-400 border-b border-gray-700 pb-2">Genel Sohbet Odası</h2>
+            
+            <!-- Mesajların Listelendiği Alan -->
+            <div id="chatMessages" class="flex-grow overflow-y-auto bg-gray-900 p-4 rounded-lg mb-4 space-y-3 border border-gray-700">
+                <!-- Mesajlar buraya gelecek -->
+            </div>
+
+            <!-- Mesaj Gönderme Formu -->
+            <div class="flex gap-2">
+                <input type="text" id="chatInput" onkeypress="handleChatKeyPress(event)" class="flex-grow bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Mesajınızı yazın...">
+                <button onclick="sendChatMessage()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-5 py-2 rounded transition">Gönder</button>
+            </div>
         </div>
 
     </main>
 
     <!-- JAVASCRIPT -->
     <script>
-        let currentAuthMode = 'login'; // 'login', 'register', 'forgot'
+        let currentAuthMode = 'login';
         let currentUsername = localStorage.getItem('username') || '';
+        let chatInterval = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             if (currentUsername) {
@@ -183,13 +194,64 @@
                     document.getElementById('authContainer').classList.add('hidden');
                     document.getElementById('userMenu').classList.remove('hidden');
                     document.getElementById('gameContainer').classList.remove('hidden');
+
+                    // Giriş yapıldıktan sonra sohbet mesajlarını çekmeye başla ve periyodik yenile
+                    fetchMessages();
+                    chatInterval = setInterval(fetchMessages, 3000);
                 }
             } catch (e) {
                 console.error(e);
             }
         }
 
+        async function fetchMessages() {
+            try {
+                const res = await fetch('/api/chat/messages');
+                const data = await res.json();
+                if (res.ok) {
+                    const chatContainer = document.getElementById('chatMessages');
+                    chatContainer.innerHTML = '';
+                    data.messages.forEach(msg => {
+                        const div = document.createElement('div');
+                        div.className = 'bg-gray-800 p-2 rounded shadow text-sm';
+                        div.innerHTML = `<strong class="text-yellow-400">${msg.username}:</strong> <span class="text-gray-200">${msg.text}</span>`;
+                        chatContainer.appendChild(div);
+                    });
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            } catch (err) {
+                console.error('Mesajlar alınamadı:', err);
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            try {
+                const res = await fetch('/api/chat/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUsername, text })
+                });
+                if (res.ok) {
+                    input.value = '';
+                    fetchMessages();
+                }
+            } catch (err) {
+                alert('Mesaj gönderilemedi!');
+            }
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
         function handleLogout() {
+            if (chatInterval) clearInterval(chatInterval);
             localStorage.removeItem('username');
             location.reload();
         }

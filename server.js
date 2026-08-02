@@ -5,11 +5,13 @@ const path = require('path');
 const app = express();
 const PORT = 3000;
 const DATA_FILE = path.join(__dirname, 'users.json');
+const CHAT_FILE = path.join(__dirname, 'chat.json');
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
 let db = { users: [] };
+let chatDb = { messages: [] };
 
 function loadData() {
     if (fs.existsSync(DATA_FILE)) {
@@ -20,10 +22,22 @@ function loadData() {
             db = { users: [] };
         }
     }
+    if (fs.existsSync(CHAT_FILE)) {
+        try {
+            const data = fs.readFileSync(CHAT_FILE, 'utf8');
+            chatDb = JSON.parse(data);
+        } catch (err) {
+            chatDb = { messages: [] };
+        }
+    }
 }
 
 function saveData() {
     fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf8');
+}
+
+function saveChatData() {
+    fs.writeFileSync(CHAT_FILE, JSON.stringify(chatDb, null, 2), 'utf8');
 }
 
 loadData();
@@ -102,6 +116,37 @@ app.post('/api/reset-password', (req, res) => {
     user.password = newPassword;
     saveData();
     
+    res.json({ success: true });
+});
+
+// --- SOHBET (CHAT) ENDPOINTLERİ ---
+
+// Sohbet Mesajlarını Getir
+app.get('/api/chat/messages', (req, res) => {
+    loadData();
+    // Son 50 mesajı gönder
+    const recentMessages = chatDb.messages.slice(-50);
+    res.json({ success: true, messages: recentMessages });
+});
+
+// Yeni Mesaj Gönder
+app.post('/api/chat/send', (req, res) => {
+    loadData();
+    const { username, text } = req.body;
+    if (!username || !text) return res.status(400).json({ error: 'Eksik bilgi!' });
+
+    chatDb.messages.push({
+        username,
+        text,
+        timestamp: Date.now()
+    });
+
+    // 100 mesajdan fazlasını silerek şişmeyi önleyelim
+    if (chatDb.messages.length > 100) {
+        chatDb.messages = chatDb.messages.slice(-100);
+    }
+
+    saveChatData();
     res.json({ success: true });
 });
 
