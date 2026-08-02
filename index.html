@@ -534,6 +534,31 @@
         function checkEnter(e) {
             if (e.key === 'Enter') sendMessage();
         }
+        // Giriş ve Kayıt modları arasında geçiş yapmayı sağlayan eksik fonksiyon
+function toggleAuthMode() {
+    // Eğer projende mode değişkeni kullanıyorsan:
+    if (typeof mode !== 'undefined') {
+        mode = mode === 'login' ? 'register' : 'login';
+    }
+    
+    // Form başlıklarını veya input alanlarını değiştiren arayüz kodların buraya gelebilir
+    const authTitle = document.getElementById('authTitle');
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+    const toggleText = document.getElementById('toggleAuthText');
+    
+    // Örnek DOM değişiklikleri (Senin HTML element ID'lerine göre değişebilir)
+    if (authTitle) {
+        if (authTitle.innerText.includes('Giriş')) {
+            authTitle.innerText = 'Kayıt Ol';
+            if (authSubmitBtn) authSubmitBtn.innerText = 'Kayıt Ol';
+            if (toggleText) toggleText.innerText = 'Zaten hesabın var mı? Giriş yap';
+        } else {
+            authTitle.innerText = 'Giriş Yap';
+            if (authSubmitBtn) authSubmitBtn.innerText = 'Giriş Yap';
+            if (toggleText) toggleText.innerText = 'Hesabın yok mu? Kayıt ol';
+        }
+    }
+}
     </script>
 </body>
 </html>
