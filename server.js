@@ -213,16 +213,18 @@ app.post('/api/admin/update-balance', (req, res) => {
     res.json({ message: 'Bakiye başarıyla güncellendi!', newBalance: user.balance });
 });
 
-// Admin: Kullanıcıyı Silme / Banlama
+// Admin: Kullanıcıyı Banlama / Aktif Etme (Silmek yerine pasif yapma)
 app.post('/api/admin/delete-user', (req, res) => {
     const { username } = req.body;
-    const index = users.findIndex(u => u.username === username);
-    if (index === -1) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+    const user = users.find(u => u.username === username);
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
 
-    users.splice(index, 1);
+    // Eğer zaten banlıysa banını kaldır, değilse banla (veya kalıcı olarak banlı yap)
+    user.isBanned = !user.isBanned; 
+
     saveUsers();
     io.emit('leaderboard_update', getLeaderboard());
-    res.json({ message: 'Kullanıcı sistemden silindi!' });
+    res.json({ message: user.isBanned ? 'Kullanıcı banlandı!' : 'Kullanıcının banı kaldırıldı!', isBanned: user.isBanned });
 });
 
 
