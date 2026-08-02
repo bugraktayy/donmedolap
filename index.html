@@ -140,10 +140,22 @@
 
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
-            document.getElementById('modalTitleinnerText = isRegisterMode ? 'Kayıt Ol' : 'Giriş Yap';
-            document.getElementById('modalTitle').innerText = isRegisterMode ? 'Kayıt Ol' : 'Giriş Yap';
-            document.getElementById('authSubmitBtn').innerText = isRegisterMode ? 'Kayıt Ol' : 'Giriş Yap';
-            document.getElementById('registerExtraFields').classList.toggle('hidden', !isRegisterMode);
+            const titleElem = document.getElementById('modalTitle');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const extraFields = document.getElementById('registerExtraFields');
+            const toggleText = document.event ? document.event.target : document.querySelector('p[onclick="toggleAuthMode()"]');
+
+            if (isRegisterMode) {
+                titleElem.innerText = 'Kayıt Ol';
+                submitBtn.innerText = 'Kayıt Ol';
+                extraFields.classList.remove('hidden');
+                if (toggleText) toggleText.innerText = 'Zaten hesabın var mı? Giriş yap';
+            } else {
+                titleElem.innerText = 'Giriş Yap';
+                submitBtn.innerText = 'Giriş Yap';
+                extraFields.classList.add('hidden');
+                if (toggleText) toggleText.innerText = "Hesabın yok mu? Kayıt ol";
+            }
         }
 
         async function handleAuth() {
