@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Donme Dolap & Oyun Platformu</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body class="bg-gray-900 text-white p-6">
     <div class="max-w-4xl mx-auto space-y-6">
@@ -19,7 +20,6 @@
                 <button onclick="openDepositModal()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-4 py-2 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
                     <span>💳</span> Bakiye Yükle
                 </button>
-                <!-- Admin Şifre Korumalı Buton -->
                 <button onclick="checkAdminPassword()" class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded-lg text-sm font-bold transition">Admin</button>
                 <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg text-sm font-bold transition">Çıkış</button>
             </div>
@@ -148,7 +148,6 @@
             }
         }
 
-        // Admin Şifre Kontrolü (0606)
         function checkAdminPassword() {
             const pass = prompt("Yönetici şifresini girin:");
             if (pass === "0606") {
@@ -200,7 +199,6 @@
             }
         }
 
-        // Çark Oyunu Fonksiyonu
         async function playWheel() {
             const betAmount = Number(document.getElementById('betAmount').value);
             const symbol = document.getElementById('betSymbol').value;
@@ -229,10 +227,12 @@
             }
         }
 
-        // Sesli Sohbet Scriptleri
+        // Sesli Sohbet (Socket.io Ses Aktarımı)
+        const socket = io();
         let localStream = null;
         let isVoiceActive = false;
         let isMuted = false;
+        let audioContext = null;
 
         async function toggleVoiceChat() {
             const statusBadge = document.getElementById('voiceStatus');
@@ -244,6 +244,34 @@
                 try {
                     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
                     
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const mediaStreamAudioSourceNode = audioContext.createMediaStreamSource(localStream);
+                    const analyser = audioContext.createAnalyser();
+                    mediaStreamAudioSourceNode.connect(analyser);
+                    
+                    const recorder = new MediaRecorder(localStream);
+                    recorder.ondataavailable = async (e) => {
+                        if (e.data.size > 0 && !isMuted) {
+                            const buffer = await e.data.arrayBuffer();
+                            socket.emit('voice-stream', buffer);
+                        }
+                    };
+                    recorder.start(250);
+                    window.activeRecorder = recorder;
+
+                    socket.on('voice-stream', async (arrayBuffer) => {
+                        if (!audioContext) return;
+                        try {
+                            const audioBufferData = await audioContext.decodeAudioData(arrayBuffer);
+                            const source = audioContext.createBufferSource();
+                            source.buffer = audioBufferData;
+                            source.connect(audioContext.destination);
+                            source.start(0);
+                        } catch (err) {
+                            console.error("Ses oynatma hatası:", err);
+                        }
+                    });
+
                     isVoiceActive = true;
                     statusBadge.innerText = 'Bağlandı';
                     statusBadge.className = 'text-xs px-2 py-1 rounded bg-green-600 font-bold';
@@ -254,13 +282,13 @@
                     muteBtn.classList.remove('hidden');
                     visualizer.classList.remove('hidden');
                 } catch (err) {
-                    alert('Mikrofon erişimine izin verilmedi veya mikrofon bulunamadı!');
+                    alert('Mikrofon erişimine izin verilmedi!');
                     console.error(err);
                 }
             } else {
-                if (localStream) {
-                    localStream.getTracks().forEach(track => track.stop());
-                }
+                if (window.activeRecorder) window.activeRecorder.stop();
+                if (localStream) localStream.getTracks().forEach(track => track.stop());
+                if (audioContext) audioContext.close();
                 
                 isVoiceActive = false;
                 isMuted = false;
@@ -274,9 +302,6 @@
                 visualizer.classList.add('hidden');
             }
         }
-        app.get('/index.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
 
         function toggleMute() {
             if (!localStream) return;
@@ -300,6 +325,6 @@
         window.onload = () => {
             fetchUserData();
         };
-    </script>   
+    </script>
 </body>
 </html>
