@@ -1,6 +1,54 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çark Oyunu</title>
+
+    <!-- BURAYI KOPYALAYIP <head> İÇİNE YAPIŞTIR -->
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+            font-family: Arial, sans-serif;
+        }
+        .container, .game-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        canvas, img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        button, input {
+            width: 100%;
+            max-width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            .container, .game-container {
+                padding: 10px;
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
     <meta charset="UTF-8">
     <title>Donme Dolap & Oyun Platformu</title>
     <script src="https://cdn.tailwindcss.com"></script>
