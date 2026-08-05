@@ -11,7 +11,7 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 // MongoDB Bağlantısı (Render Environment Variables kısmından MONGO_URL ekleyebilirsin)
-const MONGO_URL = process.env.MONGO_URL || 'mongodb+srv://kullaniciadi:sifre@cluster.mongodb.net/oyunplatformu?retryWrites=true&w=majority';
+const MONGO_URL = process.env.MONGO_URL || 'mongodb://ruletadmin:Rulet2026@ac-bbzfpx0-shard-00-00.lvkap9t.mongodb.net:27017,ac-bbzfpx0-shard-00-01.lvkap9t.mongodb.net:27017,ac-bbzfpx0-shard-00-02.lvkap9t.mongodb.net:27017/?ssl=true&replicaSet=atlas-oifh88-shard-0&authSource=admin&appName=Cluster0';
 
 mongoose.connect(MONGO_URL)
     .then(() => console.log('MongoDB veritabanına başarıyla bağlanıldı!'))
