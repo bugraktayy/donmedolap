@@ -2,145 +2,90 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Paneli - Yönetim</title>
+    <title>Admin Paneli - Oyun Platformu</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white p-6">
-    <div class="max-w-6xl mx-auto space-y-8">
+    <div class="max-w-5xl mx-auto space-y-6">
         
-        <!-- Üst Başlık -->
-        <div class="flex justify-between items-center bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-            <h1 class="text-2xl font-bold text-yellow-400">Yönetici Paneli</h1>
-            <a href="/" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-bold transition">Ana Sayfaya Dön</a>
+        <!-- Üst Menü -->
+        <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
+            <h1 class="text-xl font-bold text-yellow-400">🛡️ Yönetici (Admin) Paneli</h1>
+            <a href="/" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm font-bold transition">← Oyun Paneline Dön</a>
         </div>
 
-        <!-- 1. Para Yatırma Talepleri Bölümü -->
-        <div class="bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-700">
-            <h2 class="text-xl font-bold text-yellow-400 mb-4">Bekleyen Para Yatırma Talepleri</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-gray-700 text-gray-400 text-sm">
-                            <th class="p-3">Kullanıcı</th>
-                            <th class="p-3">Tutar</th>
-                            <th class="p-3">Tarih</th>
-                            <th class="p-3">Durum</th>
-                            <th class="p-3">İşlem</th>
-                        </tr>
-                    </thead>
-                    <tbody id="depositTableBody" class="text-sm">
-                        <!-- Dinamik doldurulacak -->
-                    </tbody>
-                </table>
+        <!-- Yatırım Onayları Bölümü -->
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl shadow-lg">
+            <h3 class="text-lg font-bold text-yellow-400 mb-4">💳 Bekleyen Yatırım Talepleri</h3>
+            <div id="depositsContainer" class="space-y-3">
+                <div class="text-gray-500 text-center py-4">Bekleyen yatırım talebi yok.</div>
             </div>
         </div>
 
-        <!-- 2. Kullanıcılar Listesi ve Yönetimi Bölümü -->
-        <div class="bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-700">
-            <h2 class="text-xl font-bold text-yellow-400 mb-4">Kayıtlı Kullanıcılar</h2>
+        <!-- Kullanıcı Listesi ve Bakiye Yönetimi -->
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl shadow-lg">
+            <h3 class="text-lg font-bold text-yellow-400 mb-4">👥 Kayıtlı Kullanıcılar</h3>
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-gray-700 text-gray-400 text-sm">
+                <table class="w-full text-left text-sm text-gray-300">
+                    <thead class="bg-gray-900 text-xs uppercase text-gray-400">
+                        <tr>
                             <th class="p-3">Kullanıcı Adı</th>
                             <th class="p-3">Bakiye</th>
-                            <th class="p-3">İşlemler</th>
+                            <th class="p-3 text-right">İşlemler</th>
                         </tr>
                     </thead>
-                    <tbody id="userTableBody" class="text-sm">
-                        <!-- Dinamik doldurulacak -->
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="3" class="text-center py-4 text-gray-500">Yükleniyor...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-    </div>
-
-    <!-- Bakiye Düzenleme Modalı -->
-    <div id="editModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-        <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl w-96 shadow-2xl">
-            <h3 class="text-lg font-bold text-yellow-400 mb-4">Kullanıcı Bakiyesi Düzenle</h3>
-            <p class="text-sm text-gray-300 mb-2">Kullanıcı: <span id="modalUsername" class="font-bold text-white"></span></p>
-            <input type="number" id="newBalanceInput" placeholder="Yeni Bakiye" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white mb-4 text-sm focus:outline-none focus:border-yellow-400">
-            <div class="flex justify-end gap-2">
-                <button onclick="closeEditModal()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded text-sm transition">İptal</button>
-                <button onclick="saveNewBalance()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-sm font-bold transition">Kaydet</button>
+        <!-- Sistem Logları ve İşlem Geçmişi -->
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-yellow-400">📜 Sistem Logları ve İşlem Geçmişi</h3>
+                <button onclick="fetchAdminLogs()" class="bg-gray-700 hover:bg-gray-600 text-xs px-3 py-1.5 rounded-lg text-white font-bold transition">Yenile</button>
+            </div>
+            
+            <div class="bg-gray-900 border border-gray-700 rounded-lg p-4 h-64 overflow-y-auto space-y-2 text-xs font-mono" id="adminLogsContainer">
+                <div class="text-gray-500 text-center py-4">Loglar yükleniyor...</div>
             </div>
         </div>
+
     </div>
 
     <script>
-        let selectedUser = '';
-
-        // Para yatırma taleplerini getir
         async function fetchDeposits() {
             try {
                 const res = await fetch('/api/admin/deposits');
                 const data = await res.json();
-                const tbody = document.getElementById('depositTableBody');
-                tbody.innerHTML = '';
-
-                if (!data.deposits || data.deposits.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-gray-500">Bekleyen para yatırma talebi yok.</td></tr>`;
+                const container = document.getElementById('depositsContainer');
+                
+                const pending = data.deposits.filter(d => d.status === 'pending');
+                if (pending.length === 0) {
+                    container.innerHTML = '<div class="text-gray-500 text-center py-4">Bekleyen yatırım talebi yok.</div>';
                     return;
                 }
 
-                data.deposits.forEach(dep => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'border-b border-gray-700/50 hover:bg-gray-700/20';
-                    tr.innerHTML = `
-                        <td class="p-3 font-bold text-yellow-400">${dep.username}</td>
-                        <td class="p-3 text-green-400 font-bold">${dep.amount} TL</td>
-                        <td class="p-3 text-gray-400">${dep.date}</td>
-                        <td class="p-3">
-                            ${dep.status === 'pending' ? '<span class="text-yellow-500 font-bold">Bekliyor</span>' : '<span class="text-green-500 font-bold">Onaylandı</span>'}
-                        </td>
-                        <td class="p-3">
-                            ${dep.status === 'pending' ? `<button onclick="approveDeposit('${dep.id}')" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs font-bold transition">Onayla</button>` : '<span class="text-gray-500">-</span>'}
-                        </td>
+                container.innerHTML = '';
+                pending.forEach(dep => {
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center bg-gray-900 p-4 rounded-xl border border-gray-700';
+                    div.innerHTML = `
+                        <div>
+                            <p class="text-sm font-bold text-white">${dep.username} <span class="text-xs text-gray-400">(${dep.senderName})</span></p>
+                            <p class="text-green-400 font-bold text-base">${dep.amount} TL</p>
+                            <p class="text-[10px] text-gray-500">${dep.date}</p>
+                        </div>
+                        <button onclick="approveDeposit('${dep.id}')" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-xs font-bold transition">Onayla & Bakiye Ekle</button>
                     `;
-                    tbody.appendChild(tr);
+                    container.appendChild(div);
                 });
-            } catch (err) {
-                console.error("Yatırma talepleri yüklenirken hata:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Kullanıcıları getir
-        async function fetchUsers() {
-            try {
-                const res = await fetch('/api/admin/users');
-                const data = await res.json();
-                const tbody = document.getElementById('userTableBody');
-                tbody.innerHTML = '';
-
-                if (!data.users || data.users.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-500">Kayıtlı kullanıcı bulunamadı.</td></tr>`;
-                    return;
-                }
-
-                data.users.forEach(u => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'border-b border-gray-700/50 hover:bg-gray-700/20';
-                    tr.innerHTML = `
-                        <td class="p-3 font-bold text-yellow-400">${u.username}</td>
-                        <td class="p-3 text-green-400 font-bold">${u.balance || 0} TL</td>
-                        <td class="p-3 flex gap-2">
-                            <button onclick="openEditModal('${u.username}', ${u.balance || 0})" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs font-bold transition">Düzenle</button>
-                            <button onclick="deleteUser('${u.username}')" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs font-bold transition">Sil</button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch (err) {
-                console.error("Kullanıcılar yüklenirken hata:", err);
-            }
-        }
-
-        // Yatırma talebini onayla
         async function approveDeposit(requestId) {
-            if (!confirm('Bu yatırma talebini onaylamak ve kullanıcının bakiyesine eklemek istiyor musunuz?')) return;
-
             try {
                 const res = await fetch('/api/admin/deposit/approve', {
                     method: 'POST',
@@ -149,51 +94,61 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
                 alert(data.message);
                 fetchDeposits();
                 fetchUsers();
-            } catch (err) {
-                alert(err.message);
-            }
+                fetchAdminLogs();
+            } catch (err) { alert(err.message); }
         }
 
-        // Modal Fonksiyonları
-        function openEditModal(username, currentBalance) {
-            selectedUser = username;
-            document.getElementById('modalUsername').innerText = username;
-            document.getElementById('newBalanceInput').value = currentBalance;
-            document.getElementById('editModal').classList.remove('hidden');
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/admin/users');
+                const data = await res.json();
+                const tbody = document.getElementById('usersTableBody');
+                
+                if (!res.ok || !data.users || data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-gray-500">Kullanıcı bulunamadı.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                data.users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-gray-700';
+                    tr.innerHTML = `
+                        <td class="p-3 font-bold text-white">${u.username}</td>
+                        <td class="p-3 text-green-400 font-bold">${u.balance} TL</td>
+                        <td class="p-3 text-right space-x-2">
+                            <button onclick="updateBalance('${u.username}')" class="bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded text-xs font-bold transition">Bakiye Düzenle</button>
+                            <button onclick="deleteUser('${u.username}')" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-xs font-bold transition">Sil</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) { console.error(err); }
         }
 
-        function closeEditModal() {
-            document.getElementById('editModal').classList.add('hidden');
-        }
-
-        async function saveNewBalance() {
-            const newBalance = Number(document.getElementById('newBalanceInput').value);
-            if (isNaN(newBalance) || newBalance < 0) return alert('Geçerli bir bakiye girin!');
+        async function updateBalance(username) {
+            const newBal = prompt(`${username} için yeni bakiyeyi girin:`);
+            if (newBal === null || isNaN(newBal)) return;
 
             try {
                 const res = await fetch('/api/admin/update-balance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: selectedUser, newBalance })
+                    body: JSON.stringify({ username, newBalance: Number(newBal) })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
-                alert('Bakiye başarıyla güncellendi!');
-                closeEditModal();
+                alert('Bakiye güncellendi!');
                 fetchUsers();
-            } catch (err) {
-                alert(err.message);
-            }
+                fetchAdminLogs();
+            } catch (err) { alert(err.message); }
         }
 
-        // Kullanıcı Sil
         async function deleteUser(username) {
-            if (!confirm(`"${username}" adlı kullanıcıyı silmek istediğinize emin misiniz?`)) return;
+            if (!confirm(`${username} adlı kullanıcıyı silmek istediğine emin misin?`)) return;
 
             try {
                 const res = await fetch('/api/admin/delete-user', {
@@ -203,18 +158,53 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
-                alert('Kullanıcı başarıyla silindi.');
+                alert('Kullanıcı silindi!');
                 fetchUsers();
-            } catch (err) {
-                alert(err.message);
-            }
+                fetchAdminLogs();
+            } catch (err) { alert(err.message); }
         }
 
-        // Sayfa açıldığında verileri otomatik yükle
+        async function fetchAdminLogs() {
+            try {
+                const res = await fetch('/api/admin/logs');
+                const data = await res.json();
+                const container = document.getElementById('adminLogsContainer');
+                
+                if (!res.ok || !data.logs || data.logs.length === 0) {
+                    container.innerHTML = '<div class="text-gray-500 text-center py-4">Henüz kayıtlı log bulunmuyor.</div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.logs.forEach(log => {
+                    let colorClass = 'text-gray-300';
+                    if (log.type === 'DEPOSIT') colorClass = 'text-green-400';
+                    else if (log.type === 'GAME') colorClass = 'text-yellow-400';
+                    else if (log.type === 'REGISTER') colorClass = 'text-blue-400';
+                    else if (log.type === 'ADMIN') colorClass = 'text-purple-400';
+
+                    const div = document.createElement('div');
+                    div.className = `border-b border-gray-800 pb-1.5 flex justify-between items-center`;
+                    div.innerHTML = `
+                        <div>
+                            <span class="text-gray-500">[${log.date}]</span> 
+                            <span class="font-bold px-1.5 py-0.5 rounded bg-gray-800 text-[10px] text-gray-300">${log.type}</span> 
+                            <span class="${colorClass}">${log.message}</span>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) { console.error('Loglar çekilemedi:', err); }
+        }
+
         window.onload = () => {
             fetchDeposits();
             fetchUsers();
+            fetchAdminLogs();
+            setInterval(() => {
+                fetchDeposits();
+                fetchAdminLogs();
+            }, 10000);
         };
     </script>
 </body>

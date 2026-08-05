@@ -282,7 +282,15 @@
 
             if (!isVoiceActive) {
                 try {
-                    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    localStream = await navigator.mediaDevices.getUserMedia({ 
+    audio: {
+        echoCancellation: true, // Yankıyı engeller
+        noiseSuppression: true, // Arka plan gürültüsünü filtreler
+        autoGainControl: true,  // Ses seviyesini otomatik dengeler
+        sampleRate: 44100       // Ses örnekleme hızını artırır
+    }, 
+    video: false 
+});
                     isVoiceActive = true;
 
                     statusBadge.innerText = 'Bağlandı';
