@@ -22,14 +22,12 @@ function loadData() {
         try { db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch (e) { db = { users: [] }; }
     }
 }
-
 function saveData() {
     fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2), 'utf8');
 }
-
 loadData();
 
-// --- KULLANICI ROTALARI ---
+// --- KULLANICI & AUTH ---
 app.get('/api/user', (req, res) => {
     loadData();
     const { username } = req.query;
@@ -52,12 +50,31 @@ app.post('/api/register', (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Eksik bilgi!' });
     if (db.users.some(u => u.username === username)) return res.status(400).json({ error: 'Bu kullanıcı adı zaten alınmış!' });
 
-    db.users.push({ username, password, securityQuestion: securityQuestion || '', securityAnswer: securityAnswer || '', balance: 1000 });
+    db.users.push({ username, password, securityQuestion: securityQuestion || '', securityAnswer: securityAnswer || '', balance: 1000, lastBonusDate: '' });
     saveData();
     res.json({ success: true });
 });
 
-// --- PARA YATIRMA ROTALARI ---
+// --- GÜNLÜK BONUS ---
+app.post('/api/bonus/daily', (req, res) => {
+    loadData();
+    const { username } = req.body;
+    const user = db.users.find(u => u.username === username);
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+
+    const today = new Date().toDateString();
+    if (user.lastBonusDate === today) {
+        return res.status(400).json({ error: 'Bugünkü günlük bonusunu zaten aldın! Yarın tekrar dene.' });
+    }
+
+    user.balance = (user.balance || 0) + 250;
+    user.lastBonusDate = today;
+    saveData();
+
+    res.json({ success: true, message: 'Tebrikler! 250 TL günlük bonus hesabına eklendi 🎁' });
+});
+
+// --- PARA YATIRMA ---
 app.post('/api/deposit/request', (req, res) => {
     const { username, amount, senderName } = req.body;
     const parsedAmount = Number(amount);
@@ -74,16 +91,13 @@ app.post('/api/deposit/request', (req, res) => {
     res.json({ success: true, message: 'Yatırım talebi alındı, onay bekleniyor.' });
 });
 
-app.get('/api/admin/deposits', (req, res) => {
-    res.json({ deposits: depositRequests });
-});
+app.get('/api/admin/deposits', (req, res) => { res.json({ deposits: depositRequests }); });
 
 app.post('/api/admin/deposit/approve', (req, res) => {
     loadData();
     const { requestId } = req.body;
     const request = depositRequests.find(r => r.id === requestId);
-    if (!request) return res.status(404).json({ error: 'Talep bulunamadı!' });
-    if (request.status !== 'pending') return res.status(400).json({ error: 'Bu talep zaten işlem görmüş!' });
+    if (!request || request.status !== 'pending') return res.status(404).json({ error: 'Geçersiz talep!' });
 
     const user = db.users.find(u => u.username === request.username);
     if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
@@ -91,11 +105,10 @@ app.post('/api/admin/deposit/approve', (req, res) => {
     user.balance = (user.balance || 0) + request.amount;
     request.status = 'approved';
     saveData();
-
-    res.json({ success: true, message: 'Talep onaylandı ve bakiye eklendi.' });
+    res.json({ success: true, message: 'Talep onaylandı.' });
 });
 
-// --- ÇARK OYUNU ROTOSU ---
+// --- ÇARK OYUNU ---
 app.post('/api/game/wheel', (req, res) => {
     loadData();
     const { username, betAmount, symbol } = req.body;
@@ -121,13 +134,14 @@ app.post('/api/game/wheel', (req, res) => {
     if (winningItem.id === symbol) {
         wonAmount = betAmount * winningItem.multiplier;
         user.balance += wonAmount;
+        io.emit('new-winner', { username: user.username, amount: wonAmount, symbol: winningItem.name });
     }
 
     saveData();
     res.json({ success: true, winningItem, wonAmount, newBalance: user.balance });
 });
 
-// --- ADMIN KULLANICI YÖNETİMİ ---
+// --- ADMIN ---
 app.get('/api/admin/users', (req, res) => {
     loadData();
     res.json({ success: true, users: db.users.map(u => ({ username: u.username, balance: u.balance || 0 })) });
@@ -138,7 +152,6 @@ app.post('/api/admin/update-balance', (req, res) => {
     const { username, newBalance } = req.body;
     const user = db.users.find(u => u.username === username);
     if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-
     user.balance = Number(newBalance);
     saveData();
     res.json({ success: true });
@@ -152,13 +165,32 @@ app.post('/api/admin/delete-user', (req, res) => {
     res.json({ success: true });
 });
 
-// --- SOCKET.IO SES AKTARIMI ---
+// --- WEBRTC SIGNALING & CHAT ---
 io.on('connection', (socket) => {
-    socket.on('voice-stream', (audioData) => {
-        socket.broadcast.emit('voice-stream', audioData);
+    // Odaya katılan diğer kullanıcılara bildir
+    socket.broadcast.emit('user-joined', socket.id);
+
+    socket.on('offer', (data) => {
+        io.to(data.target).emit('offer', { offer: data.offer, sender: socket.id });
+    });
+
+    socket.on('answer', (data) => {
+        io.to(data.target).emit('answer', { answer: data.answer, sender: socket.id });
+    });
+
+    socket.on('ice-candidate', (data) => {
+        io.to(data.target).emit('ice-candidate', { candidate: data.candidate, sender: socket.id });
+    });
+
+    socket.on('chat-message', (data) => {
+        io.emit('chat-message', data);
+    });
+
+    socket.on('disconnect', () => {
+        socket.broadcast.emit('user-disconnected', socket.id);
     });
 });
 
 server.listen(PORT, () => {
-    console.log(`Sunucu çalışıyor: http://localhost:${PORT}`);
+    console.log(`Sunucu WebRTC ses desteğiyle çalışıyor: http://localhost:${PORT}`);
 });

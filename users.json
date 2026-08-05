@@ -47,7 +47,8 @@
       "password": "bugra",
       "securityQuestion": "bugra",
       "securityAnswer": "bugra",
-      "balance": 1000
+      "balance": 250,
+      "lastBonusDate": "Wed Aug 05 2026"
     }
   ],
   "history": [

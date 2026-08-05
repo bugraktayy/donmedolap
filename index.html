@@ -7,7 +7,7 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body class="bg-gray-900 text-white p-6">
-    <div class="max-w-4xl mx-auto space-y-6">
+    <div class="max-w-5xl mx-auto space-y-6">
         
         <!-- Üst Bar / Menü -->
         <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
@@ -17,6 +17,9 @@
             </div>
             
             <div class="flex items-center gap-3">
+                <button onclick="claimDailyBonus()" class="bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-gray-950 font-bold px-3 py-2 rounded-xl shadow-lg transition flex items-center gap-1.5 text-xs">
+                    <span>🎁</span> Günlük Bonus
+                </button>
                 <button onclick="openDepositModal()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-4 py-2 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
                     <span>💳</span> Bakiye Yükle
                 </button>
@@ -25,7 +28,7 @@
             </div>
         </div>
 
-        <!-- Ana İçerik / Oyun ve Sohbet Alanı -->
+        <!-- Ana İçerik Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <!-- Sol: Bahis Çarkı / Dönme Dolap Oyunu -->
@@ -87,37 +90,51 @@
 
         </div>
 
+        <!-- Alt Kısım: Canlı Metin Sohbeti & Son Kazananlar -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Canlı Metin Sohbeti -->
+            <div class="bg-gray-800 border border-gray-700 p-5 rounded-xl shadow-lg flex flex-col h-72">
+                <h3 class="text-md font-bold text-yellow-400 mb-2">💬 Genel Sohbet Odası</h3>
+                <div id="chatMessages" class="flex-grow bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-y-auto space-y-2 text-xs mb-3"></div>
+                <div class="flex gap-2">
+                    <input type="text" id="chatInput" placeholder="Bir şeyler yaz..." onkeydown="if(event.key==='Enter') sendChatMessage()" class="flex-grow bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-yellow-400">
+                    <button onclick="sendChatMessage()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-950 font-bold px-4 py-2 rounded-lg text-xs transition">Gönder</button>
+                </div>
+            </div>
+
+            <!-- Son Kazananlar -->
+            <div class="bg-gray-800 border border-gray-700 p-5 rounded-xl shadow-lg flex flex-col h-72">
+                <h3 class="text-md font-bold text-yellow-400 mb-2">🏆 Son Büyük Kazançlar</h3>
+                <div id="winnersList" class="flex-grow bg-gray-900 border border-gray-700 rounded-lg p-3 overflow-y-auto space-y-2 text-xs">
+                    <div class="text-gray-500 text-center py-4">Henüz kazanç kaydı yok...</div>
+                </div>
+            </div>
+
+        </div>
+
     </div>
 
-    <!-- PARA YATIRMA AÇILIR PENCERESİ (MODAL) -->
+    <!-- PARA YATIRMA MODALI -->
     <div id="depositModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
         <div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-md shadow-2xl text-white relative">
             <button onclick="closeDepositModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">✕</button>
 
             <h3 class="text-xl font-bold text-yellow-400 mb-2 flex items-center gap-2">
-                <span>💳</span> Bakiye Yükle (Para Yatır)
+                <span>💳</span> Bakiye Yükle
             </h3>
-            <p class="text-xs text-gray-400 mb-4">Aşağıdaki IBAN adresine havale/EFT yaptıktan sonra formu doldurarak bildirim gönderin.</p>
+            <p class="text-xs text-gray-400 mb-4">Aşağıdaki IBAN adresine havale yaptıktan sonra formu doldurun.</p>
 
             <div class="bg-gray-900 border border-gray-700 p-4 rounded-xl mb-4 space-y-2 text-xs">
-                <div class="flex justify-between">
-                    <span class="text-gray-400">Banka / Sistem:</span>
-                    <span class="font-bold text-white">Ziraat Bankası / Papara</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="text-gray-400">Alıcı Ad Soyad:</span>
-                    <span class="font-bold text-yellow-400">Muhammed Coşkun</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-gray-400">IBAN:</span>
-                    <span class="font-mono font-bold text-green-400 bg-gray-800 px-2 py-1 rounded">TR33 0001 0000 0000 1234 5678 90</span>
-                </div>
+                <div class="flex justify-between"><span class="text-gray-400">Banka:</span><span class="font-bold text-white">Ziraat Bankası / Papara</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Alıcı:</span><span class="font-bold text-yellow-400">Muhammed Coşkun</span></div>
+                <div class="flex justify-between items-center"><span class="text-gray-400">IBAN:</span><span class="font-mono font-bold text-green-400 bg-gray-800 px-2 py-1 rounded">TR33 0001 0000 0000 1234 5678 90</span></div>
             </div>
 
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Gönderen Adı Soyadı (Hesap Sahibi)</label>
-                    <input type="text" id="depositSenderName" placeholder="Adınızı ve Soyadınızı girin" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                    <label class="block text-xs text-gray-400 mb-1">Gönderen Adı Soyadı</label>
+                    <input type="text" id="depositSenderName" placeholder="Adınız Soyadınız" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">Yatırılan Tutar (TL)</label>
@@ -135,6 +152,8 @@
         let currentUsername = localStorage.getItem('username') || 'Misafir';
         document.getElementById('displayUsername').innerText = currentUsername;
 
+        const socket = io();
+
         async function fetchUserData() {
             if (currentUsername === 'Misafir') return;
             try {
@@ -143,18 +162,13 @@
                 if (res.ok) {
                     document.getElementById('displayBalance').innerText = data.user.balance;
                 }
-            } catch (err) {
-                console.error("Kullanıcı bilgisi alınamadı", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         function checkAdminPassword() {
             const pass = prompt("Yönetici şifresini girin:");
-            if (pass === "0606") {
-                window.location.href = '/admin.html';
-            } else if (pass !== null) {
-                alert("Hatalı şifre!");
-            }
+            if (pass === "0606") window.location.href = '/admin.html';
+            else if (pass !== null) alert("Hatalı şifre!");
         }
 
         function logout() {
@@ -162,49 +176,46 @@
             window.location.href = '/login.html';
         }
 
-        function openDepositModal() {
-            document.getElementById('depositModal').classList.remove('hidden');
-        }
-
-        function closeDepositModal() {
-            document.getElementById('depositModal').classList.add('hidden');
-        }
+        function openDepositModal() { document.getElementById('depositModal').classList.remove('hidden'); }
+        function closeDepositModal() { document.getElementById('depositModal').classList.add('hidden'); }
 
         async function requestDepositWithDetails() {
             const senderName = document.getElementById('depositSenderName').value.trim();
             const amount = document.getElementById('depositAmount').value.trim();
-
-            if (!senderName) return alert('Lütfen gönderen adını ve soyadını yazın!');
-            if (!amount || amount <= 0) return alert('Lütfen geçerli bir tutar girin!');
+            if (!senderName || !amount || amount <= 0) return alert('Lütfen bilgileri doldurun!');
 
             try {
                 const res = await fetch('/api/deposit/request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        username: currentUsername, 
-                        amount: amount,
-                        senderName: senderName 
-                    })
+                    body: JSON.stringify({ username: currentUsername, amount, senderName })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
                 alert(data.message);
-                document.getElementById('depositSenderName').value = '';
-                document.getElementById('depositAmount').value = '';
                 closeDepositModal();
-            } catch (err) {
-                alert(err.message);
-            }
+            } catch (err) { alert(err.message); }
+        }
+
+        async function claimDailyBonus() {
+            try {
+                const res = await fetch('/api/bonus/daily', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUsername })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                alert(data.message);
+                fetchUserData();
+            } catch (err) { alert(err.message); }
         }
 
         async function playWheel() {
             const betAmount = Number(document.getElementById('betAmount').value);
             const symbol = document.getElementById('betSymbol').value;
             const resultDiv = document.getElementById('gameResult');
-
-            if (!betAmount || betAmount <= 0) return alert('Geçerli bir bahis miktarı girin!');
+            if (!betAmount || betAmount <= 0) return alert('Geçerli bahis miktarı girin!');
 
             try {
                 const res = await fetch('/api/game/wheel', {
@@ -214,25 +225,54 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error);
-
                 document.getElementById('displayBalance').innerText = data.newBalance;
 
                 if (data.wonAmount > 0) {
-                    resultDiv.innerHTML = `<span class="text-green-400">Tebrikler! Çarktan gelen: <b class="uppercase">${data.winningItem.name}</b>. Kazandığın: ${data.wonAmount} TL</span>`;
+                    resultDiv.innerHTML = `<span class="text-green-400">Tebrikler! Kazandığın: ${data.wonAmount} TL</span>`;
                 } else {
-                    resultDiv.innerHTML = `<span class="text-red-400">Kaybettin! Çarktan gelen: <b class="uppercase">${data.winningItem.name}</b>. Tekrar dene!</span>`;
+                    resultDiv.innerHTML = `<span class="text-red-400">Kaybettin! Çarktan gelen: ${data.winningItem.name}</span>`;
                 }
-            } catch (err) {
-                alert(err.message);
-            }
+            } catch (err) { alert(err.message); }
         }
 
-        // Sesli Sohbet (Socket.io Ses Aktarımı)
-        const socket = io();
+        // --- CANLI METİN SOHBETİ ---
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+            socket.emit('chat-message', { username: currentUsername, message });
+            input.value = '';
+        }
+
+        socket.on('chat-message', (data) => {
+            const chatBox = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="text-yellow-400 font-bold">${data.username}:</span> <span class="text-gray-200">${data.message}</span>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        // --- SON KAZANANLAR ---
+        socket.on('new-winner', (data) => {
+            const winnersList = document.getElementById('winnersList');
+            if (winnersList.children.length === 1 && winnersList.children[0].classList.contains('text-gray-500')) {
+                winnersList.innerHTML = '';
+            }
+            const div = document.createElement('div');
+            div.className = 'flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-700/50';
+            div.innerHTML = `<span><b class="text-yellow-400">${data.username}</b> <span class="text-green-400 font-bold">${data.amount} TL</span> kazandı!</span>`;
+            winnersList.prepend(div);
+        });
+
+        // --- WEBRTC SESLİ SOHBET ---
         let localStream = null;
+        let peerConnections = {};
         let isVoiceActive = false;
         let isMuted = false;
-        let audioContext = null;
+
+        const rtcConfig = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
 
         async function toggleVoiceChat() {
             const statusBadge = document.getElementById('voiceStatus');
@@ -243,61 +283,31 @@
             if (!isVoiceActive) {
                 try {
                     localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                    
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const mediaStreamAudioSourceNode = audioContext.createMediaStreamSource(localStream);
-                    const analyser = audioContext.createAnalyser();
-                    mediaStreamAudioSourceNode.connect(analyser);
-                    
-                    const recorder = new MediaRecorder(localStream);
-                    recorder.ondataavailable = async (e) => {
-                        if (e.data.size > 0 && !isMuted) {
-                            const buffer = await e.data.arrayBuffer();
-                            socket.emit('voice-stream', buffer);
-                        }
-                    };
-                    recorder.start(250);
-                    window.activeRecorder = recorder;
-
-                    socket.on('voice-stream', async (arrayBuffer) => {
-                        if (!audioContext) return;
-                        try {
-                            const audioBufferData = await audioContext.decodeAudioData(arrayBuffer);
-                            const source = audioContext.createBufferSource();
-                            source.buffer = audioBufferData;
-                            source.connect(audioContext.destination);
-                            source.start(0);
-                        } catch (err) {
-                            console.error("Ses oynatma hatası:", err);
-                        }
-                    });
-
                     isVoiceActive = true;
+
                     statusBadge.innerText = 'Bağlandı';
                     statusBadge.className = 'text-xs px-2 py-1 rounded bg-green-600 font-bold';
-                    
                     toggleBtn.innerText = 'Sohbetten Ayrıl';
                     toggleBtn.className = 'flex-grow bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition flex items-center justify-center gap-2';
-                    
                     muteBtn.classList.remove('hidden');
                     visualizer.classList.remove('hidden');
+
+                    // Diğer kullanıcılara bağlantı kurma isteği at
+                    socket.emit('user-joined', socket.id);
                 } catch (err) {
                     alert('Mikrofon erişimine izin verilmedi!');
-                    console.error(err);
                 }
             } else {
-                if (window.activeRecorder) window.activeRecorder.stop();
-                if (localStream) localStream.getTracks().forEach(track => track.stop());
-                if (audioContext) audioContext.close();
-                
+                if (localStream) localStream.getTracks().forEach(t => t.stop());
+                Object.values(peerConnections).forEach(pc => pc.close());
+                peerConnections = {};
+
                 isVoiceActive = false;
                 isMuted = false;
                 statusBadge.innerText = 'Bağlı Değil';
                 statusBadge.className = 'text-xs px-2 py-1 rounded bg-red-600 font-bold';
-                
                 toggleBtn.innerHTML = '<span>📞</span> Sohbete Katıl';
                 toggleBtn.className = 'flex-grow bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition flex items-center justify-center gap-2';
-                
                 muteBtn.classList.add('hidden');
                 visualizer.classList.add('hidden');
             }
@@ -307,7 +317,6 @@
             if (!localStream) return;
             isMuted = !isMuted;
             localStream.getAudioTracks()[0].enabled = !isMuted;
-            
             const muteBtn = document.getElementById('muteBtn');
             const visualizer = document.getElementById('voiceVisualizer');
             
@@ -322,9 +331,72 @@
             }
         }
 
-        window.onload = () => {
-            fetchUserData();
-        };
+        // WebRTC İşlemleri
+        socket.on('user-joined', async (id) => {
+            if (!isVoiceActive || id === socket.id) return;
+            const pc = createPeerConnection(id);
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                socket.emit('offer', { target: id, offer });
+            } catch (err) { console.error(err); }
+        });
+
+        socket.on('offer', async (data) => {
+            if (!isVoiceActive) return;
+            const pc = createPeerConnection(data.sender);
+            try {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                socket.emit('answer', { target: data.sender, answer });
+            } catch (err) { console.error(err); }
+        });
+
+        socket.on('answer', async (data) => {
+            const pc = peerConnections[data.sender];
+            if (pc) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            }
+        });
+
+        socket.on('ice-candidate', async (data) => {
+            const pc = peerConnections[data.sender];
+            if (pc && data.candidate) {
+                await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        });
+
+        socket.on('user-disconnected', (id) => {
+            if (peerConnections[id]) {
+                peerConnections[id].close();
+                delete peerConnections[id];
+            }
+        });
+
+        function createPeerConnection(id) {
+            const pc = new RTCPeerConnection(rtcConfig);
+            peerConnections[id] = pc;
+
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { target: id, candidate: event.candidate });
+                }
+            };
+
+            pc.ontrack = (event) => {
+                const audio = document.createElement('audio');
+                audio.srcObject = event.streams[0];
+                audio.autoplay = true;
+                document.body.appendChild(audio);
+            };
+
+            return pc;
+        }
+
+        window.onload = () => { fetchUserData(); };
     </script>
 </body>
 </html>
