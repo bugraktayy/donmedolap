@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Giriş Yap & Kayıt Ol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
+    
+    <!-- Ana Giriş Kutusu -->
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 w-96">
+        <h2 class="text-2xl font-bold text-yellow-400 mb-6 text-center">Giriş Yap</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Kullanıcı Adı</label>
+                <input type="text" id="loginUsername" placeholder="Kullanıcı adınızı girin" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1">Şifre</label>
+                <input type="password" id="loginPassword" placeholder="Şifrenizi girin" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+            </div>
+            <button onclick="loginUser()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-950 font-bold py-2.5 rounded-xl text-sm transition shadow-lg">
+                Giriş Yap
+            </button>
+
+            <!-- Alt Linkler (Kayıt Ol & Şifre Unuttum) -->
+            <div class="flex justify-between text-xs pt-2">
+                <button onclick="openRegisterModal()" class="text-yellow-400 hover:underline">Hesabın yok mu? Kayıt Ol</button>
+                <button onclick="openForgotModal()" class="text-gray-400 hover:underline">Şifremi Unuttum</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KAYIT OL MODALI -->
+    <div id="registerModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-md shadow-2xl text-white relative">
+            <button onclick="closeRegisterModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">✕</button>
+            <h3 class="text-xl font-bold text-yellow-400 mb-4">Kayıt Ol</h3>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Kullanıcı Adı</label>
+                    <input type="text" id="regUsername" placeholder="Kullanıcı adı belirleyin" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Şifre</label>
+                    <input type="password" id="regPassword" placeholder="Şifre belirleyin" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Gizli Soru (Şifre Kurtarma İçin)</label>
+                    <input type="text" id="regSecurityQuestion" placeholder="Örn: İlk evcil hayvanınızın adı?" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Gizli Soru Cevabı</label>
+                    <input type="text" id="regSecurityAnswer" placeholder="Cevabınız" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <button onclick="registerUser()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg mt-2">
+                    Kayıt Ol ve 1000 TL Kazan 🎁
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ŞİFREMİ UNUTTUM MODALI -->
+    <div id="forgotModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-md shadow-2xl text-white relative">
+            <button onclick="closeForgotModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">✕</button>
+            <h3 class="text-xl font-bold text-yellow-400 mb-4">Şifre Sıfırlama</h3>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Kullanıcı Adı</label>
+                    <input type="text" id="forgotUsername" placeholder="Kullanıcı adınızı girin" onblur="fetchSecurityQuestion()" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Gizli Soru</label>
+                    <div id="displaySecurityQuestion" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-gray-400 text-sm">Önce kullanıcı adı girin...</div>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Gizli Soru Cevabı</label>
+                    <input type="text" id="forgotAnswer" placeholder="Cevabınız" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Yeni Şifre</label>
+                    <input type="password" id="forgotNewPassword" placeholder="Yeni şifrenizi girin" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <button onclick="resetPassword()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg mt-2">
+                    Şifreyi Değiştir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        async function loginUser() {
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            if (!username || !password) return alert('Lütfen tüm alanları doldurun!');
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                localStorage.setItem('username', data.username);
+                window.location.href = '/index.html';
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function openRegisterModal() { document.getElementById('registerModal').classList.remove('hidden'); }
+        function closeRegisterModal() { document.getElementById('registerModal').classList.add('hidden'); }
+
+        function openForgotModal() { document.getElementById('forgotModal').classList.remove('hidden'); }
+        function closeForgotModal() { document.getElementById('forgotModal').classList.add('hidden'); }
+
+        async function registerUser() {
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const securityQuestion = document.getElementById('regSecurityQuestion').value.trim();
+            const securityAnswer = document.getElementById('regSecurityAnswer').value.trim();
+
+            if (!username || !password) return alert('Kullanıcı adı ve şifre zorunludur!');
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, securityQuestion, securityAnswer })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                alert('Kayıt başarılı! 1000 TL başlangıç hediyeniz yüklendi. Giriş yapabilirsiniz.');
+                closeRegisterModal();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function fetchSecurityQuestion() {
+            const username = document.getElementById('forgotUsername').value.trim();
+            if (!username) return;
+            try {
+                const res = await fetch(`/api/get-security-question?username=${username}`);
+                const data = await res.json();
+                if (res.ok) {
+                    document.getElementById('displaySecurityQuestion').innerText = data.question;
+                } else {
+                    document.getElementById('displaySecurityQuestion').innerText = 'Kullanıcı bulunamadı!';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function resetPassword() {
+            const username = document.getElementById('forgotUsername').value.trim();
+            const answer = document.getElementById('forgotAnswer').value.trim();
+            const newPassword = document.getElementById('forgotNewPassword').value.trim();
+
+            if (!username || !answer || !newPassword) return alert('Lütfen tüm alanları doldurun!');
+
+            try {
+                const res = await fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, answer, newPassword })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                alert('Şifreniz başarıyla değiştirildi! Yeni şifrenizle giriş yapabilirsiniz.');
+                closeForgotModal();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+    </script>
+</body>
+</html>

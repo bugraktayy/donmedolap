@@ -1,5 +1,55 @@
 {
-  "users": [],
+  "users": [
+    {
+      "username": "sad",
+      "password": "sadd",
+      "securityQuestion": "sadsad",
+      "securityAnswer": "sda",
+      "balance": 0
+    },
+    {
+      "username": "dasffasd",
+      "password": "fads",
+      "securityQuestion": "fasfasd",
+      "securityAnswer": "fadsf",
+      "balance": 0
+    },
+    {
+      "username": "safasfdsaf",
+      "password": "fdasfa",
+      "securityQuestion": "dasfads",
+      "securityAnswer": "fdasfa",
+      "balance": 1000
+    },
+    {
+      "username": "dsadas",
+      "password": "fdasfas",
+      "securityQuestion": "dasfdas",
+      "securityAnswer": "fdas",
+      "balance": 0
+    },
+    {
+      "username": "as",
+      "password": "as",
+      "securityQuestion": "as",
+      "securityAnswer": "as",
+      "balance": 0
+    },
+    {
+      "username": "adsfsa",
+      "password": "dasfdas",
+      "securityQuestion": "adsfsa",
+      "securityAnswer": "dasfas",
+      "balance": 1000
+    },
+    {
+      "username": "bugra",
+      "password": "bugra",
+      "securityQuestion": "bugra",
+      "securityAnswer": "bugra",
+      "balance": 1000
+    }
+  ],
   "history": [
     {
       "id": "strawberry",

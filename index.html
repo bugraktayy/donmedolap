@@ -2,262 +2,304 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem ve Sohbet</title>
+    <title>Donme Dolap & Oyun Platformu</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col justify-between">
-
-    <!-- NAVBAR -->
-    <header class="bg-gray-800 p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-xl font-bold text-yellow-400">Sistem</h1>
-        <div id="userMenu" class="hidden flex items-center gap-4">
-            <span class="text-sm">Kullanıcı: <strong id="usernameDisplay"></strong></span>
-            <span class="text-sm">Bakiye: <strong id="userBalance" class="text-green-400">0</strong> TL</span>
-            <button onclick="handleLogout()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">Çıkış Yap</button>
-        </div>
-    </header>
-
-    <!-- ANA İÇERİK -->
-    <main class="flex-grow flex items-center justify-center p-4">
+<body class="bg-gray-900 text-white p-6">
+    <div class="max-w-4xl mx-auto space-y-6">
         
-        <!-- GİRİŞ / KAYIT KUTUSU -->
-        <div id="authContainer" class="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md">
-            <h2 id="authTitle" class="text-2xl font-bold mb-6 text-center text-yellow-400">Giriş Yap</h2>
+        <!-- Üst Bar / Menü -->
+        <div class="flex justify-between items-center bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-700">
+            <div>
+                <h1 class="text-xl font-bold text-yellow-400">Canlı Oyun Platformu</h1>
+                <p class="text-xs text-gray-400">Hoş geldin, <span id="displayUsername" class="text-white font-bold">-</span> | Bakiye: <span id="displayBalance" class="text-green-400 font-bold">0</span> TL</p>
+            </div>
             
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Kullanıcı Adı</label>
-                    <input type="text" id="authUsername" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Kullanıcı adını gir">
-                </div>
-
-                <div>
-                    <label class="block text-sm text-gray-400 mb-1">Şifre</label>
-                    <input type="password" id="authPassword" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Şifreni gir">
-                </div>
-
-                <!-- Kayıt Ol Ek Alanları -->
-                <div id="registerFields" class="hidden space-y-4">
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Güvenlik Sorusu</label>
-                        <input type="text" id="secQuestion" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Örn: İlk evcil hayvanının adı?">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-400 mb-1">Güvenlik Sorusu Cevabı</label>
-                        <input type="text" id="secAnswer" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Cevabın">
-                    </div>
-                </div>
-
-                <button onclick="handleAuthSubmit()" id="authSubmitBtn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 rounded transition">
-                    Giriş Yap
+            <div class="flex items-center gap-3">
+                <button onclick="openDepositModal()" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-4 py-2 rounded-xl shadow-lg transition flex items-center gap-2 text-sm">
+                    <span>💳</span> Bakiye Yükle
                 </button>
+                <!-- Admin Şifre Korumalı Buton -->
+                <button onclick="checkAdminPassword()" class="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded-lg text-sm font-bold transition">Admin</button>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg text-sm font-bold transition">Çıkış</button>
+            </div>
+        </div>
 
-                <!-- Mod Geçişleri -->
-                <div class="flex justify-between text-sm mt-4">
-                    <button onclick="toggleAuthMode('login')" class="text-gray-400 hover:text-white underline">Giriş Yap</button>
-                    <button onclick="toggleAuthMode('register')" class="text-gray-400 hover:text-white underline">Kayıt Ol</button>
-                    <button onclick="toggleAuthMode('forgot')" class="text-gray-400 hover:text-white underline">Şifremi Unuttum</button>
+        <!-- Ana İçerik / Oyun ve Sohbet Alanı -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Sol: Bahis Çarkı / Dönme Dolap Oyunu -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg space-y-4">
+                <h3 class="text-lg font-bold text-yellow-400">🎡 Dönme Dolap / Bahis Çarkı</h3>
+                <p class="text-xs text-gray-400">Sembolünü seç, bahsini gir ve çarkı çevirerek kazancını katla!</p>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Bahis Miktarı (TL)</label>
+                        <input type="number" id="betAmount" placeholder="Örn: 100" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Sembol Seç</label>
+                        <select id="betSymbol" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                            <option value="watermelon">Karpuz (5x)</option>
+                            <option value="orange">Portakal (5x)</option>
+                            <option value="apple">Elma (5x)</option>
+                            <option value="fish">Balık (10x)</option>
+                            <option value="burger">Burger (15x)</option>
+                            <option value="chicken">Tavuk (25x)</option>
+                            <option value="meat">Et (45x)</option>
+                        </select>
+                    </div>
+                    <button onclick="playWheel()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-950 font-bold py-2.5 rounded-xl text-sm transition shadow-lg">
+                        Çarkı Çevir 🚀
+                    </button>
+                    <div id="gameResult" class="text-center text-xs font-bold text-gray-300 mt-2"></div>
                 </div>
             </div>
-        </div>
 
-        <!-- BAŞARILI GİRİŞ VE SOHBET EKRANI -->
-        <div id="gameContainer" class="hidden w-full max-w-2xl bg-gray-800 p-6 rounded-xl shadow-lg flex flex-col h-[500px]">
-            <h2 class="text-2xl font-bold mb-4 text-yellow-400 border-b border-gray-700 pb-2">Genel Sohbet Odası</h2>
-            
-            <!-- Mesajların Listelendiği Alan -->
-            <div id="chatMessages" class="flex-grow overflow-y-auto bg-gray-900 p-4 rounded-lg mb-4 space-y-3 border border-gray-700">
-                <!-- Mesajlar buraya gelecek -->
+            <!-- Sağ: Canlı Sesli Sohbet Paneli -->
+            <div class="bg-gray-800 border border-gray-700 p-5 rounded-xl shadow-lg flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold text-yellow-400 flex items-center gap-2">
+                            🎤 Canlı Sesli Sohbet
+                        </h3>
+                        <span id="voiceStatus" class="text-xs px-2 py-1 rounded bg-red-600 font-bold">Bağlı Değil</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-4">Diğer oyuncularla sesli iletişim kurmak için mikrofonunu açabilirsin.</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <button id="toggleVoiceBtn" onclick="toggleVoiceChat()" class="flex-grow bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition flex items-center justify-center gap-2">
+                            <span>📞</span> Sohbete Katıl
+                        </button>
+                        <button id="muteBtn" onclick="toggleMute()" class="hidden bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded-lg text-sm transition" title="Sustur / Konuş">
+                            🔇
+                        </button>
+                    </div>
+
+                    <div id="voiceVisualizer" class="hidden p-2 bg-gray-900 rounded-lg border border-gray-700 text-center text-xs text-green-400 font-semibold animate-pulse">
+                        🔴 Canlı Yayındasın (Mikrofon Açık)
+                    </div>
+                </div>
             </div>
 
-            <!-- Mesaj Gönderme Formu -->
-            <div class="flex gap-2">
-                <input type="text" id="chatInput" onkeypress="handleChatKeyPress(event)" class="flex-grow bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-yellow-400" placeholder="Mesajınızı yazın...">
-                <button onclick="sendChatMessage()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold px-5 py-2 rounded transition">Gönder</button>
-            </div>
         </div>
 
-    </main>
+    </div>
 
-    <!-- JAVASCRIPT -->
+    <!-- PARA YATIRMA AÇILIR PENCERESİ (MODAL) -->
+    <div id="depositModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-md shadow-2xl text-white relative">
+            <button onclick="closeDepositModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl font-bold">✕</button>
+
+            <h3 class="text-xl font-bold text-yellow-400 mb-2 flex items-center gap-2">
+                <span>💳</span> Bakiye Yükle (Para Yatır)
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Aşağıdaki IBAN adresine havale/EFT yaptıktan sonra formu doldurarak bildirim gönderin.</p>
+
+            <div class="bg-gray-900 border border-gray-700 p-4 rounded-xl mb-4 space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Banka / Sistem:</span>
+                    <span class="font-bold text-white">Ziraat Bankası / Papara</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Alıcı Ad Soyad:</span>
+                    <span class="font-bold text-yellow-400">Muhammed Coşkun</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-400">IBAN:</span>
+                    <span class="font-mono font-bold text-green-400 bg-gray-800 px-2 py-1 rounded">TR33 0001 0000 0000 1234 5678 90</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Gönderen Adı Soyadı (Hesap Sahibi)</label>
+                    <input type="text" id="depositSenderName" placeholder="Adınızı ve Soyadınızı girin" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Yatırılan Tutar (TL)</label>
+                    <input type="number" id="depositAmount" placeholder="Örn: 500" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-400">
+                </div>
+                <button onclick="requestDepositWithDetails()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg mt-2">
+                    Yatırım Bildirimi Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
     <script>
-        let currentAuthMode = 'login';
-        let currentUsername = localStorage.getItem('username') || '';
-        let chatInterval = null;
+        let currentUsername = localStorage.getItem('username') || 'Misafir';
+        document.getElementById('displayUsername').innerText = currentUsername;
 
-        window.addEventListener('DOMContentLoaded', () => {
-            if (currentUsername) {
-                checkUserSession();
-            }
-        });
-
-        function toggleAuthMode(mode) {
-            currentAuthMode = mode;
-            const authTitle = document.getElementById('authTitle');
-            const authSubmitBtn = document.getElementById('authSubmitBtn');
-            const registerFields = document.getElementById('registerFields');
-
-            if (mode === 'login') {
-                authTitle.innerText = 'Giriş Yap';
-                authSubmitBtn.innerText = 'Giriş Yap';
-                registerFields.classList.add('hidden');
-            } else if (mode === 'register') {
-                authTitle.innerText = 'Kayıt Ol';
-                authSubmitBtn.innerText = 'Kayıt Ol';
-                registerFields.classList.remove('hidden');
-            } else if (mode === 'forgot') {
-                authTitle.innerText = 'Şifremi Unuttum';
-                authSubmitBtn.innerText = 'Güvenlik Sorusunu Getir';
-                registerFields.classList.add('hidden');
-            }
-        }
-
-        async function handleAuthSubmit() {
-            const username = document.getElementById('authUsername').value.trim();
-            const password = document.getElementById('authPassword').value.trim();
-
-            if (!username) return alert('Kullanıcı adı boş olamaz!');
-
-            if (currentAuthMode === 'login') {
-                if (!password) return alert('Şifre boş olamaz!');
-                try {
-                    const res = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-
-                    localStorage.setItem('username', data.username);
-                    currentUsername = data.username;
-                    alert('Giriş başarılı!');
-                    location.reload();
-                } catch (err) {
-                    alert(err.message);
-                }
-            } else if (currentAuthMode === 'register') {
-                if (!password) return alert('Şifre boş olamaz!');
-                const securityQuestion = document.getElementById('secQuestion').value.trim();
-                const securityAnswer = document.getElementById('secAnswer').value.trim();
-
-                try {
-                    const res = await fetch('/api/register', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password, securityQuestion, securityAnswer })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-
-                    alert('Kayıt başarılı! Giriş yapabilirsiniz.');
-                    toggleAuthMode('login');
-                } catch (err) {
-                    alert(err.message);
-                }
-            } else if (currentAuthMode === 'forgot') {
-                try {
-                    const res = await fetch(`/api/get-security-question?username=${encodeURIComponent(username)}`);
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error);
-
-                    const answer = prompt(`Güvenlik Sorusu: ${data.question}\nCevabını gir:`);
-                    if (!answer) return;
-
-                    const newPassword = prompt('Yeni şifreni gir:');
-                    if (!newPassword) return;
-
-                    const resetRes = await fetch('/api/reset-password', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, answer, newPassword })
-                    });
-                    const resetData = await resetRes.json();
-                    if (!resetRes.ok) throw new Error(resetData.error);
-
-                    alert('Şifre başarıyla değiştirildi!');
-                    toggleAuthMode('login');
-                } catch (err) {
-                    alert(err.message);
-                }
-            }
-        }
-
-        async function checkUserSession() {
+        async function fetchUserData() {
+            if (currentUsername === 'Misafir') return;
             try {
-                const res = await fetch(`/api/user?username=${encodeURIComponent(currentUsername)}`);
-                const data = await res.json();
-                if (res.ok && data.user) {
-                    document.getElementById('usernameDisplay').innerText = currentUsername;
-                    document.getElementById('userBalance').innerText = data.user.balance || 0;
-                    
-                    document.getElementById('authContainer').classList.add('hidden');
-                    document.getElementById('userMenu').classList.remove('hidden');
-                    document.getElementById('gameContainer').classList.remove('hidden');
-
-                    fetchMessages();
-                    chatInterval = setInterval(fetchMessages, 3000);
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function fetchMessages() {
-            try {
-                const res = await fetch('/api/chat/messages');
+                const res = await fetch(`/api/user?username=${currentUsername}`);
                 const data = await res.json();
                 if (res.ok) {
-                    const chatContainer = document.getElementById('chatMessages');
-                    chatContainer.innerHTML = '';
-                    data.messages.forEach(msg => {
-                        const div = document.createElement('div');
-                        div.className = 'bg-gray-800 p-2 rounded shadow text-sm';
-                        if (msg.isAdmin) {
-                            div.innerHTML = `<strong class="text-red-400 bg-red-900/40 px-1 rounded">🛡️ ${msg.username}:</strong> <span class="text-yellow-200 font-bold">${msg.text}</span>`;
-                        } else {
-                            div.innerHTML = `<strong class="text-yellow-400">${msg.username}:</strong> <span class="text-gray-200">${msg.text}</span>`;
-                        }
-                        chatContainer.appendChild(div);
-                    });
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                    document.getElementById('displayBalance').innerText = data.user.balance;
                 }
             } catch (err) {
-                console.error('Mesajlar alınamadı:', err);
+                console.error("Kullanıcı bilgisi alınamadı", err);
             }
         }
 
-        async function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            const text = input.value.trim();
-            if (!text) return;
+        // Admin Şifre Kontrolü (0606)
+        function checkAdminPassword() {
+            const pass = prompt("Yönetici şifresini girin:");
+            if (pass === "0606") {
+                window.location.href = '/admin.html';
+            } else if (pass !== null) {
+                alert("Hatalı şifre!");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('username');
+            window.location.href = '/login.html';
+        }
+
+        function openDepositModal() {
+            document.getElementById('depositModal').classList.remove('hidden');
+        }
+
+        function closeDepositModal() {
+            document.getElementById('depositModal').classList.add('hidden');
+        }
+
+        async function requestDepositWithDetails() {
+            const senderName = document.getElementById('depositSenderName').value.trim();
+            const amount = document.getElementById('depositAmount').value.trim();
+
+            if (!senderName) return alert('Lütfen gönderen adını ve soyadını yazın!');
+            if (!amount || amount <= 0) return alert('Lütfen geçerli bir tutar girin!');
 
             try {
-                const res = await fetch('/api/chat/send', {
+                const res = await fetch('/api/deposit/request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: currentUsername, text })
+                    body: JSON.stringify({ 
+                        username: currentUsername, 
+                        amount: amount,
+                        senderName: senderName 
+                    })
                 });
-                if (res.ok) {
-                    input.value = '';
-                    fetchMessages();
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                alert(data.message);
+                document.getElementById('depositSenderName').value = '';
+                document.getElementById('depositAmount').value = '';
+                closeDepositModal();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        // Çark Oyunu Fonksiyonu
+        async function playWheel() {
+            const betAmount = Number(document.getElementById('betAmount').value);
+            const symbol = document.getElementById('betSymbol').value;
+            const resultDiv = document.getElementById('gameResult');
+
+            if (!betAmount || betAmount <= 0) return alert('Geçerli bir bahis miktarı girin!');
+
+            try {
+                const res = await fetch('/api/game/wheel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: currentUsername, betAmount, symbol })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                document.getElementById('displayBalance').innerText = data.newBalance;
+
+                if (data.wonAmount > 0) {
+                    resultDiv.innerHTML = `<span class="text-green-400">Tebrikler! Çarktan gelen: <b class="uppercase">${data.winningItem.name}</b>. Kazandığın: ${data.wonAmount} TL</span>`;
+                } else {
+                    resultDiv.innerHTML = `<span class="text-red-400">Kaybettin! Çarktan gelen: <b class="uppercase">${data.winningItem.name}</b>. Tekrar dene!</span>`;
                 }
             } catch (err) {
-                alert('Mesaj gönderilemedi!');
+                alert(err.message);
             }
         }
 
-        function handleChatKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendChatMessage();
+        // Sesli Sohbet Scriptleri
+        let localStream = null;
+        let isVoiceActive = false;
+        let isMuted = false;
+
+        async function toggleVoiceChat() {
+            const statusBadge = document.getElementById('voiceStatus');
+            const toggleBtn = document.getElementById('toggleVoiceBtn');
+            const muteBtn = document.getElementById('muteBtn');
+            const visualizer = document.getElementById('voiceVisualizer');
+
+            if (!isVoiceActive) {
+                try {
+                    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                    
+                    isVoiceActive = true;
+                    statusBadge.innerText = 'Bağlandı';
+                    statusBadge.className = 'text-xs px-2 py-1 rounded bg-green-600 font-bold';
+                    
+                    toggleBtn.innerText = 'Sohbetten Ayrıl';
+                    toggleBtn.className = 'flex-grow bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition flex items-center justify-center gap-2';
+                    
+                    muteBtn.classList.remove('hidden');
+                    visualizer.classList.remove('hidden');
+                } catch (err) {
+                    alert('Mikrofon erişimine izin verilmedi veya mikrofon bulunamadı!');
+                    console.error(err);
+                }
+            } else {
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+                
+                isVoiceActive = false;
+                isMuted = false;
+                statusBadge.innerText = 'Bağlı Değil';
+                statusBadge.className = 'text-xs px-2 py-1 rounded bg-red-600 font-bold';
+                
+                toggleBtn.innerHTML = '<span>📞</span> Sohbete Katıl';
+                toggleBtn.className = 'flex-grow bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition flex items-center justify-center gap-2';
+                
+                muteBtn.classList.add('hidden');
+                visualizer.classList.add('hidden');
+            }
+        }
+        app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+        function toggleMute() {
+            if (!localStream) return;
+            isMuted = !isMuted;
+            localStream.getAudioTracks()[0].enabled = !isMuted;
+            
+            const muteBtn = document.getElementById('muteBtn');
+            const visualizer = document.getElementById('voiceVisualizer');
+            
+            if (isMuted) {
+                muteBtn.innerText = '🔊';
+                visualizer.innerText = '🟡 Mikrofon Susturuldu';
+                visualizer.className = 'mt-3 p-2 bg-gray-900 rounded-lg border border-gray-700 text-center text-xs text-yellow-400 font-semibold';
+            } else {
+                muteBtn.innerText = '🔇';
+                visualizer.innerText = '🔴 Canlı Yayındasın (Mikrofon Açık)';
+                visualizer.className = 'mt-3 p-2 bg-gray-900 rounded-lg border border-gray-700 text-center text-xs text-green-400 font-semibold animate-pulse';
             }
         }
 
-        function handleLogout() {
-            if (chatInterval) clearInterval(chatInterval);
-            localStorage.removeItem('username');
-            location.reload();
-        }
-    </script>
+        window.onload = () => {
+            fetchUserData();
+        };
+    </script>   
 </body>
 </html>

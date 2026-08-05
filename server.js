@@ -9,26 +9,25 @@ const CHAT_FILE = path.join(__dirname, 'chat.json');
 
 app.use(express.json());
 app.use(express.static(__dirname));
+// Doğrudan login sayfasına yönlendirme için
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+// Tarayıcıdan direkt siteye girildiğinde login'e yönlendirmek istersen:
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
 
 let db = { users: [] };
 let chatDb = { messages: [] };
 
 function loadData() {
     if (fs.existsSync(DATA_FILE)) {
-        try {
-            const data = fs.readFileSync(DATA_FILE, 'utf8');
-            db = JSON.parse(data);
-        } catch (err) {
-            db = { users: [] };
-        }
+        try { db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); } catch (e) { db = { users: [] }; }
     }
     if (fs.existsSync(CHAT_FILE)) {
-        try {
-            const data = fs.readFileSync(CHAT_FILE, 'utf8');
-            chatDb = JSON.parse(data);
-        } catch (err) {
-            chatDb = { messages: [] };
-        }
+        try { chatDb = JSON.parse(fs.readFileSync(CHAT_FILE, 'utf8')); } catch (e) { chatDb = { messages: [] }; }
     }
 }
 
@@ -42,172 +41,112 @@ function saveChatData() {
 
 loadData();
 
-// 1. Oturum Kontrolü (Kullanıcı Bilgisi)
+// --- KULLANICI İŞLEMLERİ ---
 app.get('/api/user', (req, res) => {
     loadData();
     const { username } = req.query;
-    if (!username) return res.status(400).json({ error: 'Kullanıcı adı belirtilmedi!' });
-
     const user = db.users.find(u => u.username === username);
     if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-    
     res.json({ user: { username: user.username, balance: user.balance || 0 } });
 });
 
-// 2. Giriş Yap
 app.post('/api/login', (req, res) => {
     loadData();
     const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Kullanıcı adı ve şifre gereklidir!' });
-
     const user = db.users.find(u => u.username === username && u.password === password);
     if (!user) return res.status(401).json({ error: 'Hatalı kullanıcı adı veya şifre!' });
-    
     res.json({ success: true, username: user.username });
 });
 
-// 3. Kayıt Ol
 app.post('/api/register', (req, res) => {
     loadData();
     const { username, password, securityQuestion, securityAnswer } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'Kullanıcı adı ve şifre zorunludur!' });
+    if (!username || !password) return res.status(400).json({ error: 'Eksik bilgi!' });
+    if (db.users.some(u => u.username === username)) return res.status(400).json({ error: 'Bu kullanıcı adı zaten alınmış!' });
 
-    if (db.users.some(u => u.username === username)) {
-        return res.status(400).json({ error: 'Bu kullanıcı adı zaten alınmış!' });
-    }
-
-    db.users.push({ 
-        username, 
-        password, 
-        securityQuestion: securityQuestion || '', 
-        securityAnswer: securityAnswer || '', 
-        balance: 0 
-    });
-    
+    db.users.push({ username, password, securityQuestion: securityQuestion || '', securityAnswer: securityAnswer || '', balance: 1000 });
     saveData();
     res.json({ success: true });
 });
 
-// 4. Güvenlik Sorusu Getir
-app.get('/api/get-security-question', (req, res) => {
-    loadData();
-    const { username } = req.query;
-    if (!username) return res.status(400).json({ error: 'Kullanıcı adı belirtilmedi!' });
+// --- PARA YATIRMA İŞLEMLERİ ---
+let depositRequests = [];
 
-    const user = db.users.find(u => u.username === username);
-    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-    
-    res.json({ question: user.securityQuestion || 'Güvenlik sorusu tanımlanmamış.' });
-});
+app.post('/api/deposit/request', (req, res) => {
+    const { username, amount, senderName } = req.body;
+    const parsedAmount = Number(amount);
 
-// 5. Şifre Sıfırla
-app.post('/api/reset-password', (req, res) => {
-    loadData();
-    const { username, answer, newPassword } = req.body;
-    if (!username || !answer || !newPassword) return res.status(400).json({ error: 'Tüm alanları doldurmalısın!' });
-
-    const user = db.users.find(u => u.username === username);
-    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-
-    if (user.securityAnswer !== answer) {
-        return res.status(400).json({ error: 'Güvenlik sorusu cevabı yanlış!' });
+    if (!username || isNaN(parsedAmount) || parsedAmount <= 0) {
+        return res.status(400).json({ error: 'Geçersiz kullanıcı veya miktar!' });
     }
 
-    user.password = newPassword;
-    saveData();
-    
-    res.json({ success: true });
-});
-
-// --- SOHBET (CHAT) ENDPOINTLERİ ---
-
-app.get('/api/chat/messages', (req, res) => {
-    loadData();
-    const recentMessages = chatDb.messages.slice(-50);
-    res.json({ success: true, messages: recentMessages });
-});
-
-app.post('/api/chat/send', (req, res) => {
-    loadData();
-    const { username, text } = req.body;
-    if (!username || !text) return res.status(400).json({ error: 'Eksik bilgi!' });
-
-    chatDb.messages.push({
+    const newRequest = {
+        id: Date.now().toString(),
         username,
-        text,
-        isAdmin: false,
-        timestamp: Date.now()
-    });
+        senderName: senderName || username,
+        amount: parsedAmount,
+        status: 'pending',
+        date: new Date().toLocaleString()
+    };
 
-    if (chatDb.messages.length > 100) {
-        chatDb.messages = chatDb.messages.slice(-100);
-    }
-
-    saveChatData();
-    res.json({ success: true });
+    depositRequests.push(newRequest);
+    res.json({ success: true, message: 'Para yatırma talebiniz alındı, onay bekleniyor.' });
 });
 
-// --- ADMIN ENDPOINTLERİ ---
+app.get('/api/admin/deposits', (req, res) => {
+    res.json({ deposits: depositRequests });
+});
 
+app.post('/api/admin/deposit/approve', (req, res) => {
+    loadData();
+    const { requestId } = req.body;
+    const request = depositRequests.find(r => r.id === requestId);
+
+    if (!request) {
+        return res.status(404).json({ error: 'Talep bulunamadı!' });
+    }
+
+    if (request.status !== 'pending') {
+        return res.status(400).json({ error: 'Bu talep zaten işlem görmüş!' });
+    }
+
+    const user = db.users.find(u => u.username === request.username);
+    if (!user) {
+        return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
+    }
+
+    user.balance = (user.balance || 0) + request.amount;
+    request.status = 'approved';
+    saveData();
+
+    res.json({ success: true, message: 'Talep onaylandı ve bakiye kullanıcıya eklendi.' });
+});
+
+// --- ADMIN İŞLEMLERİ ---
 app.get('/api/admin/users', (req, res) => {
     loadData();
-    const sanitizedUsers = db.users.map(u => ({
-        username: u.username,
-        balance: u.balance !== undefined ? u.balance : 0,
-        securityQuestion: u.securityQuestion
-    }));
-    res.json({ success: true, users: sanitizedUsers });
+    res.json({ success: true, users: db.users.map(u => ({ username: u.username, balance: u.balance || 0, securityQuestion: u.securityQuestion })) });
 });
 
 app.post('/api/admin/update-balance', (req, res) => {
     loadData();
     const { username, newBalance } = req.body;
-
     const user = db.users.find(u => u.username === username);
     if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
 
     user.balance = Number(newBalance);
     saveData();
-
-    res.json({ success: true, message: 'Bakiye güncellendi!' });
+    res.json({ success: true });
 });
 
 app.post('/api/admin/delete-user', (req, res) => {
     loadData();
     const { username } = req.body;
-
-    const initialLength = db.users.length;
     db.users = db.users.filter(u => u.username !== username);
-
-    if (db.users.length === initialLength) {
-        return res.status(404).json({ error: 'Kullanıcı bulunamadı!' });
-    }
-
     saveData();
-    res.json({ success: true, message: 'Kullanıcı silindi!' });
+    res.json({ success: true });
 });
 
-app.post('/api/admin/send-message', (req, res) => {
-    loadData();
-    const { text } = req.body;
-    if (!text) return res.status(400).json({ error: 'Mesaj metni boş olamaz!' });
-
-    chatDb.messages.push({
-        username: 'YÖNETİCİ',
-        text,
-        isAdmin: true,
-        timestamp: Date.now()
-    });
-
-    if (chatDb.messages.length > 100) {
-        chatDb.messages = chatDb.messages.slice(-100);
-    }
-
-    saveChatData();
-    res.json({ success: true, message: 'Sunucu mesajı gönderildi!' });
-});
-
-// Sunucuyu Başlat
 app.listen(PORT, () => {
     console.log(`Sunucu çalışıyor: http://localhost:${PORT}`);
 });

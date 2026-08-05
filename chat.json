@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "username": "as",
+      "text": "sa",
+      "isAdmin": false,
+      "timestamp": 1785928950767
+    },
+    {
+      "username": "YÖNETİCİ",
+      "text": "sa",
+      "isAdmin": true,
+      "timestamp": 1785928981631
+    }
+  ]
+}
